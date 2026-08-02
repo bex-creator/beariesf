@@ -442,6 +442,20 @@
             if (isHost) resetMatch();
         }
 
+        function handleRoundOver(winnerStr) {
+            if (gameState.status !== 'playing') return;
+            gameState.status = 'round_over';
+            gameState[winnerStr].score++;
+            
+            if (gameState.p1.score >= TARGET_SCORE || gameState.p2.score >= TARGET_SCORE) {
+                gameState.status = 'match_over';
+            } else {
+                setTimeout(() => {
+                    if (isHost) resetRound();
+                }, 3000);
+            }
+        }
+
         function getBasePlayer() {
             return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false };
         }
