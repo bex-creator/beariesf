@@ -6,7 +6,6 @@
     <title>P2P Neon Sumo Knockout</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Adding Tone.js for synthesized retro sound effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -25,6 +24,7 @@
         .glow-text-cyan { text-shadow: 0 0 15px rgba(34, 211, 238, 0.8); }
         .glow-text-fuchsia { text-shadow: 0 0 15px rgba(232, 121, 249, 0.8); }
         .glow-text-yellow { text-shadow: 0 0 15px rgba(253, 224, 71, 0.8); }
+        .glow-text-red { text-shadow: 0 0 15px rgba(239, 68, 68, 0.8); }
     </style>
 </head>
 <body>
@@ -35,15 +35,20 @@
     <!-- Main Menu UI -->
     <div id="ui-home" class="ui-panel absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4">
         <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 mb-2 tracking-tighter drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] text-center">SUMO KNOCKOUT</h1>
-        <p class="text-slate-400 mb-6 text-center max-w-md">First to 5 wins! Use WASD/Arrows to move, SPACE to dash. Grab powerups to dominate!</p>
+        <p class="text-slate-400 mb-6 text-center max-w-md">First to 5 wins! Use WASD/Arrows to move, SPACE to dash.</p>
         
         <div class="flex flex-col md:flex-row gap-6 mb-8">
             <button onclick="showHostMenu()" class="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(8,145,178,0.6)] transition-all transform hover:scale-105">Host Match</button>
             <button onclick="showJoinMenu()" class="px-8 py-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(192,38,211,0.6)] transition-all transform hover:scale-105">Join Match</button>
         </div>
-        <div class="flex gap-4 text-xs text-slate-500">
+        <div class="flex flex-wrap justify-center gap-4 text-xs text-slate-500 max-w-md">
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-yellow-400 inline-block shadow-[0_0_8px_#facc15]"></span> Titan Mass</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-400 inline-block shadow-[0_0_8px_#4ade80]"></span> Overdrive Speed</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-400 inline-block shadow-[0_0_8px_#4ade80]"></span> Overdrive</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500 inline-block shadow-[0_0_8px_#ef4444]"></span> Repulsor Pulse</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block shadow-[0_0_8px_#a855f7]"></span> Vortex Pull</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block shadow-[0_0_8px_#3b82f6]"></span> Juggernaut Shield</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500 inline-block shadow-[0_0_8px_#f97316]"></span> Explosive Mine</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-slate-400 inline-block border-2 border-slate-300"></span> Bumper Hazard</span>
         </div>
     </div>
 
@@ -120,22 +125,30 @@
             if (audioInit) return;
             await Tone.start();
             
-            // Heavy membrane synth for bumps
             sfx.bump = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, oscillator: { type: "square" } }).toDestination();
             sfx.bump.volume.value = -8;
             
-            // FM Synth for dash
             sfx.dash = new Tone.FMSynth({ modulationIndex: 12.22, envelope: { attack: 0.01, decay: 0.2 }, modulation: { type: "square" } }).toDestination();
             sfx.dash.volume.value = -12;
 
-            // Synth for powerup collect
             sfx.powerup = new Tone.PolySynth(Tone.Synth, { envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 } }).toDestination();
             sfx.powerup.volume.value = -10;
 
-            // Metal synth for sudden death bell
             sfx.bell = new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 1.4, release: 0.2 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination();
             sfx.bell.volume.value = -15;
+
+            // New Synth for the Repulsor Shockwave
+            sfx.repel = new Tone.MembraneSynth({ pitchDecay: 0.1, octaves: 1.5, oscillator: { type: "sine" }, envelope: {attack: 0.01, decay: 0.4, sustain: 0, release: 0.1} }).toDestination();
+            sfx.repel.volume.value = -2;
             
+            // New Synth for the Vortex
+            sfx.vortex = new Tone.FMSynth({ harmonicity: 0.5, modulationIndex: 10, oscillator: { type: "sine" }, envelope: { attack: 0.1, decay: 0.2, sustain: 1, release: 0.5 } }).toDestination();
+            sfx.vortex.volume.value = -10;
+
+            // NEW: Mine explosion
+            sfx.boom = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 8, oscillator: { type: "square" }, envelope: {attack: 0.001, decay: 0.8, sustain: 0, release: 0.1} }).toDestination();
+            sfx.boom.volume.value = -5;
+
             audioInit = true;
         }
 
@@ -146,6 +159,9 @@
                 if (type === 'dash') sfx.dash.triggerAttackRelease("C4", "16n");
                 if (type === 'powerup') sfx.powerup.triggerAttackRelease(["C5", "E5", "G5"], "8n");
                 if (type === 'bell') sfx.bell.triggerAttackRelease("1n");
+                if (type === 'repel') sfx.repel.triggerAttackRelease("C1", "8n");
+                if (type === 'vortex') sfx.vortex.triggerAttackRelease("G2", "8n");
+                if (type === 'boom') sfx.boom.triggerAttackRelease("C1", "4n");
             } catch (e) { console.warn("Audio play failed:", e); }
         }
 
@@ -199,7 +215,7 @@
         }
 
         function showHostMenu() {
-            initAudio(); // Initialize sound engine
+            initAudio();
             switchUI('ui-host');
             document.getElementById('host-id').innerText = 'Generating...';
             initPeer((id) => {
@@ -213,7 +229,7 @@
         }
 
         function showJoinMenu() {
-            initAudio(); // Initialize sound engine
+            initAudio();
             switchUI('ui-join');
             document.getElementById('join-id').value = '';
             document.getElementById('btn-join').innerText = 'Connect';
@@ -255,14 +271,20 @@
                 setTimeout(() => location.reload(), 2000);
             });
 
-            if (isHost) {
-                resetMatch();
-            }
+            if (isHost) resetMatch();
         }
 
-        // Send one-off events for sounds/particles to guest so they trigger instantly
+        // Local visual effects arrays
+        let particles = [];
+        let visualShockwaves = []; 
+        let floatingTexts = []; 
+        let arenaPulse = 0;
+        let screenShake = 0;
+        let p1Decoys = [];
+        let p2Decoys = [];
+
         function broadcastEvent(evt) {
-            handleNetworkEvent(evt); // Play locally
+            handleNetworkEvent(evt); 
             if (conn && conn.open && isHost) conn.send({ type: 'event', data: evt });
         }
 
@@ -272,14 +294,43 @@
                 arenaPulse = 1.0;
                 screenShake = evt.intensity * 10;
                 playSound('bump', evt.intensity);
+                
+                // Add comic-style floating text on hard hits
+                if (evt.intensity > 1.2) {
+                    const texts = ["BAM!", "WHACK!", "SMASH!", "CRASH!", "BOOM!"];
+                    const txt = texts[Math.floor(Math.random() * texts.length)];
+                    floatingTexts.push({ x: evt.x, y: evt.y, text: txt, life: 1.0, vy: -2 });
+                }
+
+                // Big hit shockwave
+                if(evt.intensity > 1.5) {
+                    visualShockwaves.push({x: evt.x, y: evt.y, radius: 20, maxRadius: 150, life: 1.0, color: '#ffffff'});
+                }
+            } else if (evt.type === 'mine') {
+                playSound('boom');
+                screenShake = 15;
+                spawnParticles(evt.x, evt.y, 3.0, '#ef4444');
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 10, maxRadius: 200, life: 1.0, color: '#f97316'});
+                const texts = ["KABOOM!", "BLAM!", "OUCH!"];
+                const txt = texts[Math.floor(Math.random() * texts.length)];
+                floatingTexts.push({ x: evt.x, y: evt.y - 20, text: txt, life: 1.0, vy: -3, color: '#f97316' });
             } else if (evt.type === 'dash') {
                 playSound('dash');
                 spawnParticles(evt.x, evt.y, 0.5, '#ffffff');
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 10, maxRadius: 80, life: 1.0, color: '#ffffff'});
             } else if (evt.type === 'powerup') {
                 playSound('powerup');
                 spawnParticles(evt.x, evt.y, 1.5, evt.color);
             } else if (evt.type === 'bell') {
                 playSound('bell');
+            } else if (evt.type === 'repel') {
+                playSound('repel');
+                screenShake = 3;
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 30, maxRadius: 250, life: 1.0, color: '#ef4444'});
+            } else if (evt.type === 'vortex') {
+                playSound('vortex');
+                screenShake = 2;
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 250, maxRadius: 10, life: 1.0, color: '#a855f7'}); // Inverted closing shockwave
             }
         }
 
@@ -312,7 +363,6 @@
             e.preventDefault();
             for (let i = 0; i < e.touches.length; i++) {
                 const t = e.touches[i];
-                // Ignore touches on the right side if they are likely hitting the dash button
                 if (t.clientX > window.innerWidth - 100 && t.clientY > window.innerHeight - 150) continue;
                 
                 if (!joystick.active) {
@@ -372,10 +422,13 @@
             status: 'lobby', 
             countdown: 3,
             powerupIdCounter: 0,
+            mineIdCounter: 0,
             powerups: [],
+            mines: [],
+            bumpers: [],
             suddenDeathBellRung: false,
-            p1: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0 },
-            p2: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0 },
+            p1: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false },
+            p2: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false },
             arena: { radius: 300 }
         };
 
@@ -390,7 +443,7 @@
         }
 
         function getBasePlayer() {
-            return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0 };
+            return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, maxSpeed: 20, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false };
         }
 
         function resetRound() {
@@ -406,7 +459,18 @@
             gameState.p2.y = 0;
             
             gameState.powerups = [];
+            gameState.mines = [];
             gameState.suddenDeathBellRung = false;
+            p1Decoys = [];
+            p2Decoys = [];
+            
+            // Spawn Orbiting Bumpers
+            gameState.bumpers = [
+                { angle: 0, dist: 150, radius: 30, x: 150, y: 0 },
+                { angle: Math.PI, dist: 150, radius: 30, x: -150, y: 0 },
+                { angle: Math.PI/2, dist: 70, radius: 20, x: 0, y: 70 } // Inner smaller bumper
+            ];
+
             gameState.status = 'countdown';
             gameState.countdown = 3;
             
@@ -422,32 +486,67 @@
         function applyInputs(p, inputs) {
             let accel = p.baseAccel;
             if (p.buff === 'speed') accel *= 2;
+            
+            p.isDashing = p.dashCd > 90; // Dashing lasts for 30 frames
 
             if (inputs.up) p.vy -= accel;
             if (inputs.down) p.vy += accel;
             if (inputs.left) p.vx -= accel;
             if (inputs.right) p.vx += accel;
 
-            // Dash Logic
             if (inputs.dash && p.dashCd <= 0) {
                 let speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
-                if (speed > 1) { // Only dash if moving
-                    let mult = 30 / speed;
+                if (speed > 1) { 
+                    let mult = 35 / speed; // Increased dash speed
                     p.vx *= mult; p.vy *= mult;
-                    p.dashCd = 120; // 2 seconds at 60fps
+                    p.dashCd = 120; 
+                    p.isDashing = true;
                     broadcastEvent({ type: 'dash', x: p.x, y: p.y });
                 }
             }
             if (p.dashCd > 0) p.dashCd--;
         }
 
-        function manageBuffs(p) {
+        function updateTrails(p) {
+            p.trails.unshift({x: p.x, y: p.y});
+            if (p.trails.length > 15) p.trails.pop();
+        }
+
+        function manageBuffs(p, opponent) {
             if (p.buffTime > 0) {
                 p.buffTime--;
+                
+                // Repulsor Logic
+                if (p.buff === 'repulsor' && p.buffTime % 60 === 0) {
+                    broadcastEvent({ type: 'repel', x: p.x, y: p.y });
+                    let dx = opponent.x - p.x;
+                    let dy = opponent.y - p.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 250) { 
+                        let force = 400 / Math.max(dist, 10); // Inverse distance force
+                        opponent.vx += (dx/dist) * force;
+                        opponent.vy += (dy/dist) * force;
+                    }
+                }
+                
+                // Vortex Logic
+                if (p.buff === 'vortex' && p.buffTime % 60 === 0) {
+                    broadcastEvent({ type: 'vortex', x: p.x, y: p.y });
+                    let dx = opponent.x - p.x;
+                    let dy = opponent.y - p.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 350) { 
+                        let force = -450 / Math.max(dist, 10); // Negative force pulls opponent in
+                        opponent.vx += (dx/dist) * force;
+                        opponent.vy += (dy/dist) * force;
+                    }
+                }
+
                 if (p.buffTime <= 0) {
                     p.buff = null;
                     p.mass = 1;
                     p.radius = 25;
+                    p.isGhost = false;
                 }
             }
         }
@@ -455,8 +554,8 @@
         function updatePhysics() {
             if (gameState.status !== 'playing') return;
 
-            manageBuffs(gameState.p1);
-            manageBuffs(gameState.p2);
+            manageBuffs(gameState.p1, gameState.p2);
+            manageBuffs(gameState.p2, gameState.p1);
 
             applyInputs(gameState.p1, localInputs);
             applyInputs(gameState.p2, remoteInputs);
@@ -464,8 +563,10 @@
             const friction = 0.95;
             gameState.p1.vx *= friction; gameState.p1.vy *= friction;
             gameState.p2.vx *= friction; gameState.p2.vy *= friction;
+            
+            updateTrails(gameState.p1);
+            updateTrails(gameState.p2);
 
-            // Shrink Arena
             if (gameState.arena.radius > 60) {
                 gameState.arena.radius -= 0.05;
                 if (gameState.arena.radius < 200 && !gameState.suddenDeathBellRung) {
@@ -474,31 +575,62 @@
                 }
             }
 
-            // Powerup Spawning
-            if (Math.random() < 0.005 && gameState.powerups.length < 2) {
+            // Orbiting Bumpers Update
+            for (let b of gameState.bumpers) {
+                b.angle += 0.025; // Rotation speed
+                b.x = Math.cos(b.angle) * b.dist;
+                b.y = Math.sin(b.angle) * b.dist;
+            }
+            
+            // Decoy Updates
+            if (gameState.p1.buff === 'decoy') {
+                 if (p1Decoys.length === 0) {
+                     p1Decoys.push({ x: gameState.p1.x, y: gameState.p1.y, vx: 0, vy: 0, offsetX: 50, offsetY: 50 });
+                     p1Decoys.push({ x: gameState.p1.x, y: gameState.p1.y, vx: 0, vy: 0, offsetX: -50, offsetY: -50 });
+                 }
+                 for (let d of p1Decoys) {
+                     d.x += (gameState.p1.x + d.offsetX - d.x) * 0.1;
+                     d.y += (gameState.p1.y + d.offsetY - d.y) * 0.1;
+                 }
+            } else { p1Decoys = []; }
+            
+            if (gameState.p2.buff === 'decoy') {
+                 if (p2Decoys.length === 0) {
+                     p2Decoys.push({ x: gameState.p2.x, y: gameState.p2.y, vx: 0, vy: 0, offsetX: 50, offsetY: -50 });
+                     p2Decoys.push({ x: gameState.p2.x, y: gameState.p2.y, vx: 0, vy: 0, offsetX: -50, offsetY: 50 });
+                 }
+                 for (let d of p2Decoys) {
+                     d.x += (gameState.p2.x + d.offsetX - d.x) * 0.1;
+                     d.y += (gameState.p2.y + d.offsetY - d.y) * 0.1;
+                 }
+            } else { p2Decoys = []; }
+
+            // Powerup Spawning (7 types now)
+            if (Math.random() < 0.006 && gameState.powerups.length < 2) {
                 let dist = Math.random() * (gameState.arena.radius - 40);
                 let angle = Math.random() * Math.PI * 2;
+                let r = Math.random();
+                let pType = r > 0.85 ? 'mass' : (r > 0.7 ? 'speed' : (r > 0.55 ? 'repulsor' : (r > 0.4 ? 'vortex' : (r > 0.25 ? 'shield' : (r > 0.1 ? 'decoy' : 'ghost')))));
+                
                 gameState.powerups.push({
                     id: gameState.powerupIdCounter++,
                     x: Math.cos(angle) * dist,
                     y: Math.sin(angle) * dist,
-                    type: Math.random() > 0.5 ? 'mass' : 'speed'
+                    type: pType
                 });
             }
 
-            // Limit Speeds
-            let max1 = gameState.p1.buff === 'speed' ? gameState.p1.maxSpeed * 1.5 : gameState.p1.maxSpeed;
-            let s1 = Math.sqrt(gameState.p1.vx**2 + gameState.p1.vy**2);
-            if (s1 > max1 && gameState.p1.dashCd < 110) { // allow burst for dash briefly
-                gameState.p1.vx = (gameState.p1.vx / s1) * max1;
-                gameState.p1.vy = (gameState.p1.vy / s1) * max1;
-            }
-
-            let max2 = gameState.p2.buff === 'speed' ? gameState.p2.maxSpeed * 1.5 : gameState.p2.maxSpeed;
-            let s2 = Math.sqrt(gameState.p2.vx**2 + gameState.p2.vy**2);
-            if (s2 > max2 && gameState.p2.dashCd < 110) {
-                gameState.p2.vx = (gameState.p2.vx / s2) * max2;
-                gameState.p2.vy = (gameState.p2.vy / s2) * max2;
+            // Mine Spawning
+            if (Math.random() < 0.004 && gameState.mines.length < 3) {
+                let dist = Math.random() * (gameState.arena.radius - 40);
+                let angle = Math.random() * Math.PI * 2;
+                gameState.mines.push({
+                    id: gameState.mineIdCounter++,
+                    x: Math.cos(angle) * dist,
+                    y: Math.sin(angle) * dist,
+                    radius: 15,
+                    pulse: 0
+                });
             }
 
             // Move
@@ -512,15 +644,67 @@
                     let dx = p.x - pu.x, dy = p.y - pu.y;
                     if (Math.sqrt(dx*dx + dy*dy) < p.radius + 15) {
                         p.buff = pu.type;
-                        p.buffTime = 300; // 5 seconds
+                        p.buffTime = 300; 
+                        let pColor = pu.type === 'mass' ? '#facc15' : (pu.type === 'speed' ? '#4ade80' : (pu.type === 'repulsor' ? '#ef4444' : (pu.type === 'vortex' ? '#a855f7' : (pu.type === 'shield' ? '#3b82f6' : (pu.type === 'decoy' ? '#94a3b8' : '#ffffff')))));
                         if (pu.type === 'mass') { p.mass = 3; p.radius = 35; }
-                        broadcastEvent({ type: 'powerup', x: pu.x, y: pu.y, color: pu.type === 'mass' ? '#facc15' : '#4ade80' });
+                        if (pu.type === 'ghost') { p.isGhost = true; }
+                        broadcastEvent({ type: 'powerup', x: pu.x, y: pu.y, color: pColor });
                         gameState.powerups.splice(i, 1);
                     }
                 }
             };
             checkPowerup(gameState.p1, 1);
             checkPowerup(gameState.p2, 2);
+
+            // Mine Collisions
+            const checkMine = (p) => {
+                for (let i = gameState.mines.length - 1; i >= 0; i--) {
+                    let m = gameState.mines[i];
+                    let dx = p.x - m.x, dy = p.y - m.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < p.radius + m.radius) {
+                        // Explode!
+                        let nx = dx/dist || 1, ny = dy/dist || 0;
+                        let force = p.buff === 'shield' ? 5 : 25; // Shield resists mine knockback heavily
+                        p.vx += nx * force;
+                        p.vy += ny * force;
+                        broadcastEvent({ type: 'mine', x: m.x, y: m.y });
+                        gameState.mines.splice(i, 1);
+                    }
+                }
+            };
+            checkMine(gameState.p1);
+            checkMine(gameState.p2);
+
+            // Bumper Collisions
+            const checkBumper = (p) => {
+                for(let b of gameState.bumpers) {
+                    let dx = p.x - b.x, dy = p.y - b.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < p.radius + b.radius) {
+                        let nx = dx/dist, ny = dy/dist;
+                        let overlap = (p.radius + b.radius) - dist;
+                        p.x += nx * overlap; p.y += ny * overlap;
+                        
+                        // Moving bumper velocity approximation
+                        let b_vx = -Math.sin(b.angle) * b.dist * 0.025;
+                        let b_vy = Math.cos(b.angle) * b.dist * 0.025;
+                        let rel_vx = p.vx - b_vx;
+                        let rel_vy = p.vy - b_vy;
+                        
+                        let dot = rel_vx*nx + rel_vy*ny;
+                        if(dot < 0) {
+                            p.vx -= 2 * dot * nx;
+                            p.vy -= 2 * dot * ny;
+                            p.vx *= 1.15; p.vy *= 1.15; // Bounce boost 
+                            let impact = Math.abs(dot);
+                            if (impact > 2) broadcastEvent({ type: 'bump', x: b.x - nx*b.radius, y: b.y - ny*b.radius, intensity: impact/5 });
+                        }
+                    }
+                }
+            };
+            checkBumper(gameState.p1);
+            checkBumper(gameState.p2);
 
             // Player Elastic Collision
             let dx = gameState.p2.x - gameState.p1.x;
@@ -530,63 +714,67 @@
 
             if (dist < minDist && dist !== 0) {
                 let nx = dx / dist, ny = dy / dist;
-                
-                // Separate completely to prevent getting stuck
                 let overlap = minDist - dist;
-                let totalMass = gameState.p1.mass + gameState.p2.mass;
-                let ratio1 = gameState.p2.mass / totalMass; // Heavier object moves less
-                let ratio2 = gameState.p1.mass / totalMass;
+                
+                // Adjust mass effectively for collision if shielded
+                let m1 = gameState.p1.buff === 'shield' ? gameState.p1.mass * 5 : gameState.p1.mass;
+                let m2 = gameState.p2.buff === 'shield' ? gameState.p2.mass * 5 : gameState.p2.mass;
+                
+                if (gameState.p1.isDashing) m1 *= 3; // Dash acts as temporary mass multiplier
+                if (gameState.p2.isDashing) m2 *= 3;
+
+                let totalMass = m1 + m2;
+                let ratio1 = m2 / totalMass; 
+                let ratio2 = m1 / totalMass;
                 
                 gameState.p1.x -= nx * overlap * ratio1;
                 gameState.p1.y -= ny * overlap * ratio1;
                 gameState.p2.x += nx * overlap * ratio2;
                 gameState.p2.y += ny * overlap * ratio2;
 
-                // Elastic Bounce (Conservation of Momentum)
                 let rvx = gameState.p1.vx - gameState.p2.vx;
                 let rvy = gameState.p1.vy - gameState.p2.vy;
                 let velAlongNormal = rvx * nx + rvy * ny;
 
                 if (velAlongNormal > 0) {
-                    let restitution = 1.1; // Extra bouncy
+                    let restitution = 1.1; 
                     let j = -(1 + restitution) * velAlongNormal;
-                    j /= (1/gameState.p1.mass + 1/gameState.p2.mass);
+                    j /= (1/m1 + 1/m2);
 
-                    gameState.p1.vx += (j / gameState.p1.mass) * nx;
-                    gameState.p1.vy += (j / gameState.p1.mass) * ny;
-                    gameState.p2.vx -= (j / gameState.p2.mass) * nx;
-                    gameState.p2.vy -= (j / gameState.p2.mass) * ny;
+                    gameState.p1.vx += (j / m1) * nx;
+                    gameState.p1.vy += (j / m1) * ny;
+                    gameState.p2.vx -= (j / m2) * nx;
+                    gameState.p2.vy -= (j / m2) * ny;
 
                     let impact = Math.abs(j);
+                    // More intense bump if someone was dashing
+                    let bumpIntensity = (gameState.p1.isDashing || gameState.p2.isDashing) ? Math.min(5, impact / 5) : Math.min(3, impact / 10);
                     if (impact > 5) {
-                        broadcastEvent({ type: 'bump', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2, intensity: Math.min(2.5, impact / 10) });
+                        broadcastEvent({ type: 'bump', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2, intensity: bumpIntensity });
                     }
                 }
             }
 
-            // Arena Bounds (Falling out)
-            let d1 = Math.sqrt(gameState.p1.x**2 + gameState.p1.y**2);
-            let d2 = Math.sqrt(gameState.p2.x**2 + gameState.p2.y**2);
-
-            if (d1 > gameState.arena.radius) handleRoundOver('p2');
-            else if (d2 > gameState.arena.radius) handleRoundOver('p1');
-        }
-
-        function handleRoundOver(winner) {
-            gameState.status = 'round_over';
-            if (winner === 'p1') gameState.p1.score++;
-            if (winner === 'p2') gameState.p2.score++;
-
-            if (gameState.p1.score >= TARGET_SCORE || gameState.p2.score >= TARGET_SCORE) {
-                gameState.status = 'match_over';
-            } else {
-                setTimeout(resetRound, 2500);
+            // Arena Bounds Check (Ghost phasing logic)
+            const handleBounds = (p, pStr) => {
+                let d = Math.sqrt(p.x**2 + p.y**2);
+                if (d > gameState.arena.radius) {
+                    if (p.isGhost) {
+                        // Phase to other side
+                        p.x = -p.x * 0.95;
+                        p.y = -p.y * 0.95;
+                        broadcastEvent({ type: 'dash', x: p.x, y: p.y }); // Reuse dash sound/visuals for phasing
+                    } else {
+                        handleRoundOver(pStr === 'p1' ? 'p2' : 'p1');
+                    }
+                }
+            }
+            
+            if (gameState.status === 'playing') {
+                handleBounds(gameState.p1, 'p1');
+                handleBounds(gameState.p2, 'p2');
             }
         }
-
-        let particles = [];
-        let arenaPulse = 0;
-        let screenShake = 0;
 
         function spawnParticles(x, y, intensity = 1, colorOverride = null) {
             const count = 15 + Math.floor(20 * intensity);
@@ -602,12 +790,20 @@
         }
 
         function drawEntities() {
-            // Background Grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            // Background Grid (Dynamic Color)
+            let isSuddenDeath = gameState.status === 'playing' && gameState.arena.radius < 200;
+            let highestScore = Math.max(gameState.p1.score, gameState.p2.score);
+            let gridRed = isSuddenDeath ? 239 : 255;
+            let gridGreen = isSuddenDeath ? 68 : Math.max(0, 255 - (highestScore * 50));
+            let gridBlue = isSuddenDeath ? 68 : Math.max(0, 255 - (highestScore * 50));
+            
+            ctx.strokeStyle = `rgba(${gridRed}, ${gridGreen}, ${gridBlue}, 0.05)`;
+            if (isSuddenDeath) ctx.strokeStyle = 'rgba(239, 68, 68, 0.15)';
+            
             ctx.lineWidth = 1;
             const gridSize = 80;
-            const offsetX = (Date.now() / 50) % gridSize; // Scrolling effect
-            const offsetY = (Date.now() / 50) % gridSize;
+            const offsetX = (Date.now() / (isSuddenDeath ? 10 : 50)) % gridSize; 
+            const offsetY = (Date.now() / (isSuddenDeath ? 10 : 50)) % gridSize;
             ctx.beginPath();
             for (let x = -canvas.width; x < canvas.width; x += gridSize) {
                 ctx.moveTo(x + offsetX, -canvas.height); ctx.lineTo(x + offsetX, canvas.height);
@@ -626,16 +822,67 @@
             ctx.lineWidth = 6 + (arenaPulse * 15);
             ctx.stroke();
 
+            // Bumpers
+            for (let b of gameState.bumpers) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 4;
+                ctx.shadowColor = '#94a3b8';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
             // Powerups
             for (let pu of gameState.powerups) {
                 ctx.beginPath();
                 ctx.arc(pu.x, pu.y, 12, 0, Math.PI*2);
-                ctx.fillStyle = pu.type === 'mass' ? '#facc15' : '#4ade80';
+                ctx.fillStyle = pu.type === 'mass' ? '#facc15' : (pu.type === 'speed' ? '#4ade80' : (pu.type === 'repulsor' ? '#ef4444' : (pu.type === 'vortex' ? '#a855f7' : (pu.type === 'shield' ? '#3b82f6' : (pu.type === 'decoy' ? '#94a3b8' : '#ffffff')))));
                 ctx.shadowColor = ctx.fillStyle;
                 ctx.shadowBlur = 15;
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
+
+            // Mines
+            for (let m of gameState.mines) {
+                m.pulse = (m.pulse || 0) + 0.1;
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2);
+                ctx.fillStyle = '#1e293b';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                let pulseAlpha = 0.5 + Math.sin(m.pulse)*0.5;
+                ctx.strokeStyle = `rgba(249, 115, 22, ${pulseAlpha})`;
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, 4, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(239, 68, 68, ${pulseAlpha})`;
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 10 * pulseAlpha;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Visual Shockwaves (Local Only)
+            for (let i = visualShockwaves.length - 1; i >= 0; i--) {
+                let sw = visualShockwaves[i];
+                ctx.beginPath();
+                ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI*2);
+                ctx.strokeStyle = sw.color;
+                ctx.globalAlpha = sw.life;
+                ctx.lineWidth = 8 * sw.life;
+                ctx.stroke();
+                
+                sw.radius += (sw.maxRadius - sw.radius) * 0.15;
+                sw.life -= 0.04;
+                if(sw.life <= 0) visualShockwaves.splice(i, 1);
+            }
+            ctx.globalAlpha = 1.0;
 
             // Particles
             for(let i=particles.length-1; i>=0; i--) {
@@ -657,8 +904,46 @@
             ctx.globalAlpha = 1.0;
 
             // Player Draw Helper
-            const drawPlayer = (p, baseColor) => {
-                // Dash Cooldown Ring
+            const drawPlayer = (p, baseColor, isDecoy = false) => {
+                // Determine active color
+                let activeColor = baseColor;
+                if (!isDecoy) {
+                    if (p.buff === 'mass') activeColor = '#facc15';
+                    if (p.buff === 'speed') activeColor = '#4ade80';
+                    if (p.buff === 'repulsor') activeColor = '#ef4444';
+                    if (p.buff === 'vortex') activeColor = '#a855f7';
+                    if (p.buff === 'decoy') activeColor = '#94a3b8';
+                }
+
+                // Ghost alpha
+                if (p.isGhost && !isDecoy) ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.2;
+                if (isDecoy) ctx.globalAlpha = 0.6; // Decoys are slightly transparent
+                
+                // Dash aura
+                if (p.isDashing && !isDecoy) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius + Math.random()*10, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.fill();
+                }
+
+                // Trails
+                if (p.trails && p.trails.length > 1 && !isDecoy) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.trails[0].x, p.trails[0].y);
+                    for (let i = 1; i < p.trails.length; i++) {
+                        ctx.lineTo(p.trails[i].x, p.trails[i].y);
+                    }
+                    ctx.strokeStyle = activeColor;
+                    ctx.lineWidth = p.radius * 0.8;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.globalAlpha = 0.3;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+                }
+
+                // Dash Cooldown ring
                 if (p.dashCd > 0) {
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius + 10, -Math.PI/2, (-Math.PI/2) + (Math.PI*2 * (p.dashCd/120)));
@@ -669,31 +954,66 @@
 
                 // Core Body
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-                
-                // Buff color override
-                let activeColor = baseColor;
-                if (p.buff === 'mass') activeColor = '#facc15';
-                if (p.buff === 'speed') activeColor = '#4ade80';
-
+                ctx.arc(p.x, p.y, isDecoy ? 25 : p.radius, 0, Math.PI*2);
                 ctx.fillStyle = activeColor;
                 ctx.shadowColor = activeColor;
-                ctx.shadowBlur = 20 + (p.buff ? 20 : 0);
+                ctx.shadowBlur = (20 + (p.buff && !isDecoy ? 20 : 0)) * (isDecoy ? 0.5 : 1);
                 ctx.fill();
                 ctx.shadowBlur = 0; 
                 
-                // Directional Core indicator (helps see spin/velocity)
+                // Shield Visual
+                if (p.buff === 'shield' && !isDecoy) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius + 8, 0, Math.PI*2);
+                    ctx.strokeStyle = '#60a5fa'; 
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([10, 10]);
+                    ctx.lineDashOffset = -Date.now() / 20; 
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Inner Highlight
                 ctx.beginPath();
-                ctx.arc(p.x + (p.vx*0.5), p.y + (p.vy*0.5), p.radius * 0.4, 0, Math.PI*2);
+                ctx.arc(p.x + (p.vx*0.5), p.y + (p.vy*0.5), (isDecoy ? 25 : p.radius) * 0.4, 0, Math.PI*2);
                 ctx.fillStyle = 'rgba(255,255,255,0.8)';
                 ctx.fill();
+                
+                ctx.globalAlpha = 1.0;
             };
 
             let d1 = Math.sqrt(gameState.p1.x**2 + gameState.p1.y**2);
             if (d1 < gameState.arena.radius + 60) drawPlayer(gameState.p1, '#22d3ee'); 
+            for (let d of p1Decoys) drawPlayer(d, '#22d3ee', true);
 
             let d2 = Math.sqrt(gameState.p2.x**2 + gameState.p2.y**2);
             if (d2 < gameState.arena.radius + 60) drawPlayer(gameState.p2, '#e879f9'); 
+            for (let d of p2Decoys) drawPlayer(d, '#e879f9', true);
+
+            // Floating Texts
+            for(let i=floatingTexts.length-1; i>=0; i--) {
+                let ft = floatingTexts[i];
+                ft.y += ft.vy;
+                ft.life -= 0.02;
+                if(ft.life <= 0) {
+                    floatingTexts.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = ft.life;
+                    ctx.fillStyle = ft.color || '#ffffff';
+                    ctx.font = '900 24px Inter, sans-serif';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 4;
+                    ctx.strokeText(ft.text, ft.x, ft.y);
+                    
+                    ctx.shadowColor = ft.color || '#ffffff';
+                    ctx.shadowBlur = 10;
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                    ctx.shadowBlur = 0;
+                }
+            }
+            ctx.globalAlpha = 1.0;
         }
 
         const TICK_RATE = 60;
@@ -748,14 +1068,18 @@
             // --- Rendering ---
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.35)'; // Motion blur alpha
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Screen Shake
             let shakeX = 0, shakeY = 0;
-            if (screenShake > 0) {
-                shakeX = (Math.random() - 0.5) * screenShake;
-                shakeY = (Math.random() - 0.5) * screenShake;
+            let currentShake = screenShake;
+            if (gameState.status === 'playing' && gameState.arena.radius < 200) {
+                currentShake = Math.max(currentShake, 2.5); // Constant rumble during sudden death
+            }
+            if (currentShake > 0) {
+                shakeX = (Math.random() - 0.5) * currentShake;
+                shakeY = (Math.random() - 0.5) * currentShake;
                 screenShake *= 0.85; 
                 if (screenShake < 0.5) screenShake = 0;
             }
