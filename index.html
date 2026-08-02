@@ -157,6 +157,12 @@
             });
         }
 
+        function showJoinMenu() {
+            switchUI('ui-join');
+            document.getElementById('join-id').value = '';
+            document.getElementById('btn-join').innerText = 'Connect';
+        }
+
         function joinGame() {
             const id = document.getElementById('join-id').value.trim();
             if(!id) return showToast('Please enter a Room ID.', true);
