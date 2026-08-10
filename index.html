@@ -76,6 +76,15 @@
                     <label class="flex items-center gap-2 text-red-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
                         <input type="radio" name="gamemode" value="chaos" class="w-4 h-4 text-red-500 focus:ring-red-500 bg-slate-700 border-slate-600"> CHAOS (HP)
                     </label>
+                    <label class="flex items-center gap-2 text-fuchsia-400 font-black cursor-pointer drop-shadow-[0_0_8px_rgba(232,121,249,0.9)] animate-pulse mt-2 w-full text-center justify-center text-xl bg-fuchsia-900/30 p-2 rounded-lg border border-fuchsia-500/50">
+                        <input type="radio" name="gamemode" value="mayhem" class="w-5 h-5 text-fuchsia-500 focus:ring-fuchsia-500 bg-slate-800 border-slate-500"> ULTRA MAYHEM ☠️
+                    </label>
+                    <label class="flex items-center gap-2 text-purple-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(168,85,247,0.8)] mt-2 w-full">
+                        <input type="radio" name="gamemode" value="blackhole" class="w-4 h-4 text-purple-500 focus:ring-purple-500 bg-slate-700 border-slate-600"> SINGULARITY 🕳️
+                    </label>
+                    <label class="flex items-center gap-2 text-green-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(74,222,128,0.8)] mt-2 w-full">
+                        <input type="radio" name="gamemode" value="pinball" class="w-4 h-4 text-green-500 focus:ring-green-500 bg-slate-700 border-slate-600"> PINBALL BRAWL 🟢
+                    </label>
                 </div>
             </div>
 
@@ -606,7 +615,7 @@
         let lastGuestMatchStatus = 'lobby';
 
         function getBasePlayer() {
-            return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false, combo: 1, lastHitTime: 0, hp: 1000 };
+            return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false, combo: 1, lastHitTime: 0, hp: 1000, maxHp: 1000 };
         }
 
         function resetRound() {
@@ -642,6 +651,30 @@
                  if (gameState.arena.radius < 400) gameState.arena.radius = 400;
                  for(let i=0; i<5; i++) gameState.sawblades.push({ x: (Math.random()-0.5)*300, y: (Math.random()-0.5)*300, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, radius: 25, angle: 0 });
                  for(let i=0; i<4; i++) gameState.bumpers.push({ angle: i*Math.PI/2, dist: 250, radius: 50, x: 0, y: 0 });
+            } else if (gameState.mode === 'mayhem') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.9; 
+                 if (gameState.arena.radius < 500) gameState.arena.radius = 500;
+                 for(let i=0; i<15; i++) gameState.sawblades.push({ x: (Math.random()-0.5)*400, y: (Math.random()-0.5)*400, vx: (Math.random()-0.5)*35, vy: (Math.random()-0.5)*35, radius: 35, angle: 0 });
+                 for(let i=0; i<8; i++) gameState.bumpers.push({ angle: i*Math.PI/4, dist: 350, radius: 70, x: 0, y: 0 });
+                 gameState.p1.hp = 2500; gameState.p1.maxHp = 2500;
+                 gameState.p2.hp = 2500; gameState.p2.maxHp = 2500;
+            } else if (gameState.mode === 'blackhole') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.45;
+                 if(gameState.arena.radius < 300) gameState.arena.radius = 300;
+                 // Start players further away from the center
+                 gameState.p1.x = -gameState.arena.radius * 0.7; 
+                 gameState.p2.x = gameState.arena.radius * 0.7;
+            } else if (gameState.mode === 'pinball') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.55;
+                 if(gameState.arena.radius < 350) gameState.arena.radius = 350;
+                 // Scatter random bumpers for pinball mode
+                 for(let i=0; i<12; i++) {
+                     let a = Math.random() * Math.PI * 2;
+                     let d = Math.random() * (gameState.arena.radius - 80);
+                     gameState.bumpers.push({ angle: a, dist: d, radius: 25 + Math.random()*15, x: Math.cos(a)*d, y: Math.sin(a)*d, isStatic: true });
+                 }
+                 gameState.p1.hp = 1500; gameState.p1.maxHp = 1500;
+                 gameState.p2.hp = 1500; gameState.p2.maxHp = 1500;
             } else {
                  gameState.bumpers.push({ angle: Math.PI/2, dist: 70, radius: 20, x: 0, y: 70 });
             }
@@ -657,19 +690,20 @@
         function applyInputs(p, inputs) {
             let accel = p.baseAccel;
             if (gameState.mode === 'chaos') accel *= 1.5;
+            if (gameState.mode === 'mayhem') accel *= 3.0;
             if (p.buff === 'speed') accel *= 2;
-            p.isDashing = p.dashCd > 90; 
+            p.isDashing = p.dashCd > (gameState.mode === 'mayhem' ? 60 : 90); 
             if (inputs.up) p.vy -= accel; if (inputs.down) p.vy += accel;
             if (inputs.left) p.vx -= accel; if (inputs.right) p.vx += accel;
             if (inputs.dash && p.dashCd <= 0) {
                 let speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
                 if (speed > 1) { 
-                    let mult = 35 / speed; 
+                    let mult = (gameState.mode === 'mayhem' ? 50 : 35) / speed; 
                     p.vx *= mult; p.vy *= mult; p.dashCd = 120; p.isDashing = true;
                     broadcastEvent({ type: 'dash', x: p.x, y: p.y });
                 }
             }
-            if (p.dashCd > 0) p.dashCd--;
+            if (p.dashCd > 0) p.dashCd -= (gameState.mode === 'mayhem' ? 3 : 1);
             
             // Combo decay
             if (Date.now() - p.lastHitTime > 3000) p.combo = 1;
@@ -701,7 +735,7 @@
                     let nx = dx/dist, ny = dy/dist;
                     broadcastEvent({ type: 'laser', x1: p.x, y1: p.y, x2: p.x + nx*1000, y2: p.y + ny*1000 });
                     opponent.vx += nx * 20; opponent.vy += ny * 20; // Laser knockback
-                    if (gameState.mode === 'chaos') opponent.hp -= 80;
+                    if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') opponent.hp -= 80;
                 }
                 if (p.buff === 'freeze') {
                     p.vx *= 0.85; p.vy *= 0.85; // Heavy friction for frozen player
@@ -722,6 +756,26 @@
             
             gameState.p1.trails.unshift({x: gameState.p1.x, y: gameState.p1.y}); if(gameState.p1.trails.length > 15) gameState.p1.trails.pop();
             gameState.p2.trails.unshift({x: gameState.p2.x, y: gameState.p2.y}); if(gameState.p2.trails.length > 15) gameState.p2.trails.pop();
+
+            // Black Hole Gravity
+            if (gameState.mode === 'blackhole') {
+                const applyGravity = (pStr, p) => {
+                    let dist = Math.sqrt(p.x**2 + p.y**2);
+                    if (dist > 0) {
+                        let pull = 600 / Math.max(dist, 10);
+                        p.vx -= (p.x/dist) * pull * 0.05;
+                        p.vy -= (p.y/dist) * pull * 0.05;
+                    }
+                    if (dist < 45 && gameState.status === 'playing') {
+                        broadcastEvent({ type: 'mine', x: p.x, y: p.y });
+                        let winner = pStr === 'p1' ? 'p2' : 'p1';
+                        handleRoundOver(winner);
+                        speak("Spaghettified! " + (winner === 'p1' ? "Player 1" : "Player 2") + " wins!");
+                        p.x = 9999; p.y = 9999;
+                    }
+                };
+                applyGravity('p1', gameState.p1); applyGravity('p2', gameState.p2);
+            }
 
             // Mode Logic
             if (gameState.mode === 'classic') {
@@ -758,7 +812,7 @@
 
             // Move Hazards
             for (let b of gameState.bumpers) {
-                b.angle += 0.025; b.x = Math.cos(b.angle) * b.dist; b.y = Math.sin(b.angle) * b.dist;
+                if (!b.isStatic) { b.angle += 0.025; b.x = Math.cos(b.angle) * b.dist; b.y = Math.sin(b.angle) * b.dist; }
             }
             for (let s of gameState.sawblades) {
                 s.x += s.vx; s.y += s.vy; s.angle += 0.2;
@@ -781,10 +835,17 @@
             updateDecoys(gameState.p1, p1Decoys); updateDecoys(gameState.p2, p2Decoys);
 
             // Powerups and Spawning
-            let puChance = gameState.mode === 'chaos' ? 0.04 : 0.006;
-            let puMax = gameState.mode === 'chaos' ? 12 : 2;
-            let mineChance = gameState.mode === 'chaos' ? 0.02 : 0.004;
-            let mineMax = gameState.mode === 'chaos' ? 8 : 3;
+            let puChance = gameState.mode === 'mayhem' ? 0.12 : (gameState.mode === 'chaos' ? 0.04 : 0.006);
+            let puMax = gameState.mode === 'mayhem' ? 30 : (gameState.mode === 'chaos' ? 12 : 2);
+            let mineChance = gameState.mode === 'mayhem' ? 0.06 : (gameState.mode === 'chaos' ? 0.02 : 0.004);
+            let mineMax = gameState.mode === 'mayhem' ? 20 : (gameState.mode === 'chaos' ? 8 : 3);
+            
+            // Mayhem Random Explosions
+            if (gameState.mode === 'mayhem' && Math.random() < 0.015) {
+                let rx = (Math.random()-0.5) * gameState.arena.radius * 1.8;
+                let ry = (Math.random()-0.5) * gameState.arena.radius * 1.8;
+                broadcastEvent({ type: 'mine', x: rx, y: ry });
+            }
 
             // Spawning Logic based on Time and Chance
             if (Math.random() < puChance && gameState.powerups.length < puMax) {
@@ -830,21 +891,26 @@
                     if (dist < p.radius + m.radius) {
                         let force = p.buff === 'shield' ? 5 : 25;
                         p.vx += (dx/dist||1) * force; p.vy += (dy/dist||0) * force;
-                        if (gameState.mode === 'chaos') p.hp -= (p.buff === 'shield' ? 20 : 150);
+                        if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') p.hp -= (p.buff === 'shield' ? 20 : 150);
                         broadcastEvent({ type: 'mine', x: m.x, y: m.y }); gameState.mines.splice(i, 1); p.combo = 1;
-                        if (gameState.mode === 'chaos') broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: (p.buff === 'shield' ? 20 : 150) });
+                        if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: (p.buff === 'shield' ? 20 : 150) });
                     }
                 }
                 for(let b of gameState.bumpers) {
                     let dx = p.x - b.x, dy = p.y - b.y; let dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < p.radius + b.radius) {
                         let nx = dx/dist, ny = dy/dist; p.x += nx * ((p.radius + b.radius) - dist); p.y += ny * ((p.radius + b.radius) - dist);
-                        let dot = (p.vx - (-Math.sin(b.angle)*b.dist*0.025))*nx + (p.vy - (Math.cos(b.angle)*b.dist*0.025))*ny;
+                        
+                        let bxVel = b.isStatic ? 0 : -Math.sin(b.angle)*b.dist*0.025;
+                        let byVel = b.isStatic ? 0 : Math.cos(b.angle)*b.dist*0.025;
+                        let dot = (p.vx - bxVel)*nx + (p.vy - byVel)*ny;
+                        
                         if(dot < 0) { 
-                            p.vx -= 2 * dot * nx * 1.15; p.vy -= 2 * dot * ny * 1.15; 
+                            let bMult = (gameState.mode === 'pinball') ? 2.5 : 1.15;
+                            p.vx -= 2 * dot * nx * bMult; p.vy -= 2 * dot * ny * bMult; 
                             if (Math.abs(dot) > 2) {
                                 broadcastEvent({ type: 'bump', x: b.x - nx*b.radius, y: b.y - ny*b.radius, intensity: Math.abs(dot)/5 });
-                                if (gameState.mode === 'chaos') {
+                                if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
                                     p.hp -= Math.abs(dot) * 1.5;
                                     broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: Math.abs(dot) * 1.5 });
                                 }
@@ -857,7 +923,7 @@
                     if (dist < p.radius + s.radius) {
                         let nx = dx/dist, ny = dy/dist;
                         p.vx += nx * 30; p.vy += ny * 30; // Massive hit
-                        if (gameState.mode === 'chaos') {
+                        if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') {
                             p.hp -= 25;
                             broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: 25 });
                         }
@@ -890,7 +956,8 @@
 
                 let velAlongNormal = (gameState.p1.vx - gameState.p2.vx) * nx + (gameState.p1.vy - gameState.p2.vy) * ny;
                 if (velAlongNormal > 0) {
-                    let j = -(1 + 1.1) * velAlongNormal; j /= (1/m1 + 1/m2);
+                    let elasticity = gameState.mode === 'pinball' ? 2.0 : 1.1;
+                    let j = -(1 + elasticity) * velAlongNormal; j /= (1/m1 + 1/m2);
                     
                     // Combo multiplier applies to the force you exert
                     let forceOn1 = (j / m1) * (1 + (gameState.p2.combo * 0.15));
@@ -904,13 +971,18 @@
                     else if (gameState.p2.isDashing) { gameState.p2.combo = Math.min(10, gameState.p2.combo + 1); gameState.p2.lastHitTime = Date.now(); gameState.p1.combo = 1;}
 
                     let impact = Math.abs(j);
-                    if (gameState.mode === 'chaos') {
-                        let dmg1 = Math.abs(forceOn1) * 3;
-                        let dmg2 = Math.abs(forceOn2) * 3;
+                    if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                        let dmgMult = gameState.mode === 'mayhem' ? 4 : (gameState.mode === 'pinball' ? 2 : 3);
+                        let dmg1 = Math.abs(forceOn1) * dmgMult;
+                        let dmg2 = Math.abs(forceOn2) * dmgMult;
                         gameState.p1.hp -= dmg1;
                         gameState.p2.hp -= dmg2;
                         if(dmg1 > 5) broadcastEvent({ type: 'damage', x: gameState.p1.x, y: gameState.p1.y, amount: dmg1, color: '#fuchsia' }); // P2 hit P1
                         if(dmg2 > 5) broadcastEvent({ type: 'damage', x: gameState.p2.x, y: gameState.p2.y, amount: dmg2, color: '#cyan' }); // P1 hit P2
+                        // Extra mayhem explosions on heavy hit
+                        if (gameState.mode === 'mayhem' && impact > 8) {
+                            broadcastEvent({ type: 'mine', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2 });
+                        }
                     }
 
                     if (impact > 5) broadcastEvent({ type: 'bump', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2, intensity: Math.min(5, impact / 5) });
@@ -921,13 +993,16 @@
             const handleBounds = (p, pStr) => {
                 let dist = Math.sqrt(p.x**2 + p.y**2);
                 
-                if (gameState.mode === 'chaos') {
+                if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
                     if (dist > gameState.arena.radius - p.radius) {
                         let nx = p.x / dist, ny = p.y / dist;
                         p.x = nx * (gameState.arena.radius - p.radius);
                         p.y = ny * (gameState.arena.radius - p.radius);
                         let dot = p.vx * nx + p.vy * ny;
-                        if (dot > 0) { p.vx -= 2 * dot * nx * 0.8; p.vy -= 2 * dot * ny * 0.8; }
+                        if (dot > 0) { 
+                            let bounce = gameState.mode === 'pinball' ? 1.5 : 0.8;
+                            p.vx -= 2 * dot * nx * bounce; p.vy -= 2 * dot * ny * bounce; 
+                        }
                         if (dot > 5) {
                             p.hp -= dot * 1.5;
                             broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: dot * 1.5, color: '#fbbf24' });
@@ -994,21 +1069,41 @@
             // Arena Ring
             arenaPulse = Math.max(0, arenaPulse - 0.05);
             ctx.beginPath(); ctx.arc(0, 0, gameState.arena.radius, 0, Math.PI*2);
-            if (gameState.mode === 'chaos') {
-                ctx.strokeStyle = `rgba(239, 68, 68, ${0.5 + arenaPulse*0.8})`;
-                ctx.lineWidth = 10 + (arenaPulse * 20); ctx.stroke();
-                ctx.strokeStyle = `rgba(220, 38, 38, 0.2)`;
-                ctx.lineWidth = 40; ctx.stroke();
+            if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                let colorBase = gameState.mode === 'mayhem' ? '232, 121, 249' : (gameState.mode === 'pinball' ? '74, 222, 128' : '239, 68, 68');
+                ctx.strokeStyle = `rgba(${colorBase}, ${0.5 + arenaPulse*0.8})`;
+                ctx.lineWidth = (gameState.mode === 'mayhem' ? 20 : 10) + (arenaPulse * 20); ctx.stroke();
+                ctx.strokeStyle = `rgba(${colorBase}, 0.2)`;
+                ctx.lineWidth = gameState.mode === 'mayhem' ? 80 : 40; ctx.stroke();
             } else {
                 ctx.strokeStyle = `rgba(${isDanger?'239,68,68':'255,255,255'}, ${0.2 + arenaPulse*0.6})`;
                 ctx.lineWidth = 6 + (arenaPulse * 15); ctx.stroke();
             }
 
+            // Black Hole
+            if (gameState.mode === 'blackhole') {
+                ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI*2);
+                ctx.fillStyle = '#000000'; ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 30 + Math.sin(Date.now()/100)*10;
+                ctx.fill(); ctx.shadowBlur = 0;
+                
+                // Swirl lines
+                for(let i=0; i<3; i++) {
+                    let angle = (Date.now()/200) + (i * Math.PI*2/3);
+                    ctx.beginPath(); ctx.arc(0,0, 45 + Math.random()*20, angle, angle + Math.PI/2);
+                    ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 3; ctx.stroke();
+                }
+            }
+
             // Bumpers & Sawblades
             for (let b of gameState.bumpers) {
                 ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4;
-                ctx.shadowColor = '#94a3b8'; ctx.shadowBlur = 10; ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+                if (gameState.mode === 'pinball') {
+                    ctx.fillStyle = `rgba(74, 222, 128, ${0.4 + Math.sin(Date.now()/150 + b.x)*0.3})`;
+                    ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 6; ctx.shadowColor = '#4ade80';
+                } else {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.shadowColor = '#94a3b8';
+                }
+                ctx.shadowBlur = 10; ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
             }
             for (let s of gameState.sawblades) {
                 ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
@@ -1152,11 +1247,11 @@
                 document.getElementById('hud-p2').querySelector('.text-slate-500').innerText = '5 \\';
             }
 
-            if (gameState.mode === 'chaos') {
+            if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
                 document.getElementById('hp-bar-container-p1').classList.remove('hidden');
                 document.getElementById('hp-bar-container-p2').classList.remove('hidden');
-                let hp1 = Math.max(0, (gameState.p1.hp / 1000) * 100);
-                let hp2 = Math.max(0, (gameState.p2.hp / 1000) * 100);
+                let hp1 = Math.max(0, (gameState.p1.hp / (gameState.p1.maxHp || 1000)) * 100);
+                let hp2 = Math.max(0, (gameState.p2.hp / (gameState.p2.maxHp || 1000)) * 100);
                 document.getElementById('hp-bar-p1').style.width = hp1 + '%';
                 document.getElementById('hp-bar-p2').style.width = hp2 + '%';
                 document.getElementById('hp-bar-p1').style.backgroundColor = hp1 < 25 ? '#ef4444' : '#22d3ee';
@@ -1226,6 +1321,7 @@
             if (gameState.mode === 'classic' && gameState.status === 'playing' && gameState.arena.radius < 200) currentShake = Math.max(currentShake, 2.5);
             if (gameState.mode === 'bombtag' && gameState.status === 'playing' && gameState.bombTag.timer < 180) currentShake = Math.max(currentShake, 3);
             if (gameState.mode === 'chaos' && gameState.status === 'playing') currentShake = Math.max(currentShake, 3.5);
+            if (gameState.mode === 'mayhem' && gameState.status === 'playing') currentShake = Math.max(currentShake, 8.0);
             if (currentShake > 0) { shakeX = (Math.random()-0.5)*currentShake; shakeY = (Math.random()-0.5)*currentShake; screenShake *= 0.85; if(screenShake<0.5) screenShake=0; }
 
             ctx.translate(canvas.width/2 + shakeX, canvas.height/2 + shakeY);
