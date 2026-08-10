@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>P2P Neon Sumo Knockout - Ultimate Edition</title>
+    <title>P2P Neon Sumo Knockout</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -23,6 +23,7 @@
         .color-btn.locked { opacity: 0.3; cursor: not-allowed; filter: grayscale(100%); }
         .color-btn.selected { border: 4px solid white; transform: scale(1.15); box-shadow: 0 0 15px currentColor; }
         
+        /* Custom scrollbar for locker */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
@@ -30,1042 +31,1325 @@
 </head>
 <body>
 
-<div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-white z-50 opacity-0 pointer-events-none transition-opacity duration-300 shadow-lg"></div>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-white z-50 opacity-0 pointer-events-none transition-opacity duration-300 shadow-lg"></div>
 
-<div id="ui-home" class="ui-panel absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4 overflow-y-auto py-10">
-    <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 mb-2 tracking-tighter drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] text-center">SUMO KNOCKOUT</h1>
-    <p class="text-slate-400 mb-8 text-center max-w-md">Win matches to unlock new colors! Use WASD/Arrows to move, SPACE to dash.</p>
-    
-    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-600 shadow-xl mb-8 w-full max-w-lg">
-        <h3 class="text-white font-bold mb-4 flex justify-between items-center">
-            <span>🎨 Locker Room</span>
-            <span class="text-sm text-cyan-400">Wins: <span id="txt-wins">0</span></span>
-        </h3>
-        <div id="color-palette" class="flex flex-wrap gap-3 justify-center"></div>
-    </div>
-
-    <div class="flex flex-col md:flex-row gap-6 mb-8 w-full max-w-lg">
-        <button onclick="showHostMenu()" class="flex-1 px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(8,145,178,0.6)] transition-all transform hover:scale-105">Host Match</button>
-        <button onclick="showJoinMenu()" class="flex-1 px-8 py-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(192,38,211,0.6)] transition-all transform hover:scale-105">Join Match</button>
-    </div>
-</div>
-
-<div id="ui-host" class="ui-panel hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4 overflow-y-auto py-10">
-    <h2 class="text-3xl font-bold text-cyan-400 mb-6 glow-text text-cyan-400">Host a Match</h2>
-    <div class="bg-slate-800 p-8 rounded-2xl border border-cyan-500 shadow-[0_0_30px_rgba(8,145,178,0.3)] text-center max-w-2xl w-full">
+    <!-- Main Menu UI -->
+    <div id="ui-home" class="ui-panel absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4 overflow-y-auto py-10">
+        <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 mb-2 tracking-tighter drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] text-center">SUMO KNOCKOUT</h1>
+        <p class="text-slate-400 mb-8 text-center max-w-md">Win matches to unlock new colors! Use WASD/Arrows to move, SPACE to dash.</p>
         
-        <div class="mb-6 bg-slate-900 p-4 rounded-xl border border-slate-700 text-left">
-            <p class="text-slate-300 font-bold mb-2">Select Game Mode:</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label class="flex items-center gap-2 text-white cursor-pointer bg-slate-800 p-2 rounded border border-slate-600">
-                    <input type="radio" name="gamemode" value="classic" checked class="w-4 h-4 text-cyan-500"> Classic Sumo
-                </label>
-                <label class="flex items-center gap-2 text-white cursor-pointer bg-slate-800 p-2 rounded border border-slate-600">
-                    <input type="radio" name="gamemode" value="koth" class="w-4 h-4 text-cyan-500"> King of the Hill
-                </label>
-                <label class="flex items-center gap-2 text-white cursor-pointer bg-slate-800 p-2 rounded border border-slate-600">
-                    <input type="radio" name="gamemode" value="bungee" class="w-4 h-4 text-cyan-500"> 🔗 Bungee Brawl
-                </label>
-                <label class="flex items-center gap-2 text-white cursor-pointer bg-slate-800 p-2 rounded border border-slate-600">
-                    <input type="radio" name="gamemode" value="lightsout" class="w-4 h-4 text-cyan-500"> 🌑 Lights Out (Sonar)
-                </label>
-                <label class="flex items-center gap-2 text-white cursor-pointer bg-slate-800 p-2 rounded border border-slate-600">
-                    <input type="radio" name="gamemode" value="davidgoliath" class="w-4 h-4 text-cyan-500"> 🥊 David vs. Goliath
-                </label>
-                <label class="flex items-center gap-2 text-white cursor-pointer bg-slate-800 p-2 rounded border border-slate-600">
-                    <input type="radio" name="gamemode" value="crumbling" class="w-4 h-4 text-cyan-500"> 🧊 Crumbling Grid
-                </label>
-                <label class="flex items-center gap-2 text-red-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(220,38,38,0.8)] bg-slate-800 p-2 rounded border border-red-900">
-                    <input type="radio" name="gamemode" value="vampire" class="w-4 h-4 text-red-500"> 🧛 Vampire Drain
-                </label>
-                <label class="flex items-center gap-2 text-orange-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(249,115,22,0.8)] bg-slate-800 p-2 rounded border border-orange-900">
-                    <input type="radio" name="gamemode" value="hotpotato" class="w-4 h-4 text-orange-500"> 🥔 Hot Potato
-                </label>
-                <label class="flex items-center gap-2 text-fuchsia-400 font-black cursor-pointer drop-shadow-[0_0_8px_rgba(232,121,249,0.9)] animate-pulse mt-2 md:col-span-2 text-center justify-center text-xl bg-fuchsia-900/30 p-2 rounded-lg border border-fuchsia-500/50">
-                    <input type="radio" name="gamemode" value="mayhem" class="w-5 h-5 text-fuchsia-500"> ULTRA MAYHEM ☠️
-                </label>
+        <!-- Customization Locker -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-600 shadow-xl mb-8 w-full max-w-lg">
+            <h3 class="text-white font-bold mb-4 flex justify-between items-center">
+                <span>🎨 Locker Room</span>
+                <span class="text-sm text-cyan-400">Wins: <span id="txt-wins">0</span></span>
+            </h3>
+            <div id="color-palette" class="flex flex-wrap gap-3 justify-center">
+                <!-- Colors injected via JS -->
             </div>
         </div>
 
-        <p class="text-slate-300 mb-2">Share this Room ID with your friend:</p>
-        <div class="bg-slate-900 p-4 rounded-lg font-mono text-cyan-300 break-all mb-4 border border-slate-700" id="host-id">Generating...</div>
-        <button onclick="copyId()" class="w-full px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-colors mb-6">Copy ID</button>
-        <div class="flex items-center justify-center space-x-2 text-cyan-500 animate-pulse">
-            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <span>Waiting for opponent...</span>
+        <div class="flex flex-col md:flex-row gap-6 mb-8 w-full max-w-lg">
+            <button onclick="showHostMenu()" class="flex-1 px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(8,145,178,0.6)] transition-all transform hover:scale-105">Host Match</button>
+            <button onclick="showJoinMenu()" class="flex-1 px-8 py-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(192,38,211,0.6)] transition-all transform hover:scale-105">Join Match</button>
         </div>
     </div>
-    <button onclick="switchUI('ui-home')" class="mt-8 text-slate-400 hover:text-white transition-colors">← Back to Menu</button>
-</div>
 
-<div id="ui-join" class="ui-panel hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4">
-    <h2 class="text-3xl font-bold text-fuchsia-400 mb-6 glow-text text-fuchsia-400">Join a Match</h2>
-    <div class="bg-slate-800 p-8 rounded-2xl border border-fuchsia-500 shadow-[0_0_30px_rgba(192,38,211,0.3)] text-center max-w-md w-full">
-        <p class="text-slate-300 mb-4">Enter your friend's Room ID:</p>
-        <input type="text" id="join-id" class="w-full bg-slate-900 text-white rounded-lg px-4 py-3 border border-slate-600 focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 mb-6 font-mono text-center" placeholder="Paste ID here">
-        <button onclick="joinGame()" class="w-full px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-lg transition-colors" id="btn-join">Connect</button>
+    <!-- Host Menu UI -->
+    <div id="ui-host" class="ui-panel hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4">
+        <h2 class="text-3xl font-bold text-cyan-400 mb-6 glow-text text-cyan-400">Host a Match</h2>
+        <div class="bg-slate-800 p-8 rounded-2xl border border-cyan-500 shadow-[0_0_30px_rgba(8,145,178,0.3)] text-center max-w-md w-full">
+            
+            <div class="mb-6 bg-slate-900 p-4 rounded-xl border border-slate-700 text-left">
+                <p class="text-slate-300 font-bold mb-2">Game Mode:</p>
+                <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center gap-2 text-white cursor-pointer">
+                        <input type="radio" name="gamemode" value="classic" checked class="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-700 border-slate-600"> Classic Sumo
+                    </label>
+                    <label class="flex items-center gap-2 text-white cursor-pointer">
+                        <input type="radio" name="gamemode" value="koth" class="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-700 border-slate-600"> King of the Hill
+                    </label>
+                    <label class="flex items-center gap-2 text-white cursor-pointer">
+                        <input type="radio" name="gamemode" value="bombtag" class="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-700 border-slate-600"> Bomb Tag
+                    </label>
+                    <label class="flex items-center gap-2 text-red-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
+                        <input type="radio" name="gamemode" value="chaos" class="w-4 h-4 text-red-500 focus:ring-red-500 bg-slate-700 border-slate-600"> CHAOS (HP)
+                    </label>
+                    <label class="flex items-center gap-2 text-fuchsia-400 font-black cursor-pointer drop-shadow-[0_0_8px_rgba(232,121,249,0.9)] animate-pulse mt-2 w-full text-center justify-center text-xl bg-fuchsia-900/30 p-2 rounded-lg border border-fuchsia-500/50">
+                        <input type="radio" name="gamemode" value="mayhem" class="w-5 h-5 text-fuchsia-500 focus:ring-fuchsia-500 bg-slate-800 border-slate-500"> ULTRA MAYHEM ☠️
+                    </label>
+                    <label class="flex items-center gap-2 text-purple-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(168,85,247,0.8)] mt-2 w-full">
+                        <input type="radio" name="gamemode" value="blackhole" class="w-4 h-4 text-purple-500 focus:ring-purple-500 bg-slate-700 border-slate-600"> SINGULARITY 🕳️
+                    </label>
+                    <label class="flex items-center gap-2 text-green-400 font-black cursor-pointer drop-shadow-[0_0_5px_rgba(74,222,128,0.8)] mt-2 w-full">
+                        <input type="radio" name="gamemode" value="pinball" class="w-4 h-4 text-green-500 focus:ring-green-500 bg-slate-700 border-slate-600"> PINBALL BRAWL 🟢
+                    </label>
+                </div>
+            </div>
+
+            <p class="text-slate-300 mb-2">Share this Room ID with your friend:</p>
+            <div class="bg-slate-900 p-4 rounded-lg font-mono text-cyan-300 break-all mb-4 border border-slate-700" id="host-id">Generating...</div>
+            <button onclick="copyId()" class="w-full px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-colors mb-6">Copy ID</button>
+            <div class="flex items-center justify-center space-x-2 text-cyan-500 animate-pulse">
+                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span>Waiting for opponent...</span>
+            </div>
+        </div>
+        <button onclick="switchUI('ui-home')" class="mt-8 text-slate-400 hover:text-white transition-colors">← Back to Menu</button>
     </div>
-    <button onclick="switchUI('ui-home')" class="mt-8 text-slate-400 hover:text-white transition-colors">← Back to Menu</button>
-</div>
 
-<div id="ui-game" class="ui-panel hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-8 z-10">
-    <div class="flex justify-between items-start w-full relative">
-        <div class="flex flex-col items-start" id="hud-p1">
-            <span class="text-cyan-400 font-black text-sm tracking-widest opacity-75">HOST (P1)</span>
-            <div class="flex items-center gap-2">
-                <span id="score-p1" class="text-white text-5xl md:text-6xl font-black glow-text">0</span>
-                <span class="text-slate-500 font-bold text-xl">/ 5</span>
+    <!-- Join Menu UI -->
+    <div id="ui-join" class="ui-panel hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-20 px-4">
+        <h2 class="text-3xl font-bold text-fuchsia-400 mb-6 glow-text text-fuchsia-400">Join a Match</h2>
+        <div class="bg-slate-800 p-8 rounded-2xl border border-fuchsia-500 shadow-[0_0_30px_rgba(192,38,211,0.3)] text-center max-w-md w-full">
+            <p class="text-slate-300 mb-4">Enter your friend's Room ID:</p>
+            <input type="text" id="join-id" class="w-full bg-slate-900 text-white rounded-lg px-4 py-3 border border-slate-600 focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 mb-6 font-mono text-center" placeholder="Paste ID here">
+            <button onclick="joinGame()" class="w-full px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-lg transition-colors" id="btn-join">Connect</button>
+        </div>
+        <button onclick="switchUI('ui-home')" class="mt-8 text-slate-400 hover:text-white transition-colors">← Back to Menu</button>
+    </div>
+
+    <!-- In-Game HUD & Mobile Controls -->
+    <div id="ui-game" class="ui-panel hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-8 z-10">
+        <div class="flex justify-between items-start w-full relative">
+            <!-- P1 Score/Combo -->
+            <div class="flex flex-col items-start" id="hud-p1">
+                <span class="text-cyan-400 font-black text-sm tracking-widest opacity-75">HOST (P1)</span>
+                <div class="flex items-center gap-2">
+                    <span id="score-p1" class="text-white text-5xl md:text-6xl font-black glow-text">0</span>
+                    <span class="text-slate-500 font-bold text-xl">/ 5</span>
+                </div>
+                <div id="hp-bar-container-p1" class="hidden w-32 md:w-48 h-3 bg-slate-800 rounded-full mt-2 overflow-hidden border border-slate-600 shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+                    <div id="hp-bar-p1" class="h-full bg-cyan-400 transition-all duration-75" style="width: 100%;"></div>
+                </div>
+                <div id="combo-p1" class="text-yellow-400 font-black text-xl italic mt-1 hidden transition-transform transform scale-100">COMBO x2!</div>
             </div>
-            <div id="hp-bar-container-p1" class="hidden w-32 md:w-48 h-3 bg-slate-800 rounded-full mt-2 overflow-hidden border border-slate-600 shadow-[0_0_10px_rgba(34,211,238,0.2)]">
-                <div id="hp-bar-p1" class="h-full bg-cyan-400 transition-all duration-75" style="width: 100%;"></div>
+            
+            <!-- Match Status Center -->
+            <div id="match-status" class="hidden absolute left-1/2 transform -translate-x-1/2 flex-col items-center pointer-events-auto bg-slate-900/90 p-6 rounded-2xl border border-yellow-500 w-80 text-center shadow-2xl">
+                <h2 id="winner-text" class="text-3xl font-black text-yellow-400 glow-text mb-4">P1 WINS!</h2>
+                <button id="btn-rematch" onclick="triggerRematch()" class="hidden px-6 py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-full w-full">Rematch</button>
+                <span id="txt-waiting-rematch" class="hidden text-slate-400">Waiting for host...</span>
             </div>
-            <div id="combo-p1" class="text-yellow-400 font-black text-xl italic mt-1 hidden transition-transform transform scale-100">COMBO x2!</div>
+
+            <!-- KOTH Status -->
+            <div id="koth-status" class="hidden absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center top-2 w-64 bg-slate-900/80 p-2 rounded-xl border border-slate-700">
+                <span class="text-white font-bold text-sm mb-1">HILL CONTROL</span>
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                    <div id="koth-bar-p1" class="h-full bg-cyan-400 transition-all duration-200" style="width: 0%;"></div>
+                    <div class="flex-grow"></div>
+                    <div id="koth-bar-p2" class="h-full bg-fuchsia-400 transition-all duration-200" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- P2 Score/Combo -->
+            <div class="flex flex-col items-end" id="hud-p2">
+                <span class="text-fuchsia-400 font-black text-sm tracking-widest opacity-75">GUEST (P2)</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-500 font-bold text-xl">5 \</span>
+                    <span id="score-p2" class="text-white text-5xl md:text-6xl font-black glow-text">0</span>
+                </div>
+                <div id="hp-bar-container-p2" class="hidden w-32 md:w-48 h-3 bg-slate-800 rounded-full mt-2 overflow-hidden border border-slate-600 shadow-[0_0_10px_rgba(232,121,249,0.2)] flex justify-end">
+                    <div id="hp-bar-p2" class="h-full bg-fuchsia-400 transition-all duration-75" style="width: 100%;"></div>
+                </div>
+                <div id="combo-p2" class="text-yellow-400 font-black text-xl italic mt-1 hidden transition-transform transform scale-100">COMBO x2!</div>
+            </div>
         </div>
         
-        <div id="match-status" class="hidden absolute left-1/2 transform -translate-x-1/2 flex-col items-center pointer-events-auto bg-slate-900/90 p-6 rounded-2xl border border-yellow-500 w-80 text-center shadow-2xl">
-            <h2 id="winner-text" class="text-3xl font-black text-yellow-400 glow-text mb-4">P1 WINS!</h2>
-            <button id="btn-rematch" onclick="triggerRematch()" class="hidden px-6 py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-full w-full">Rematch</button>
-            <span id="txt-waiting-rematch" class="hidden text-slate-400">Waiting for host...</span>
-        </div>
-
-        <div id="koth-status" class="hidden absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center top-2 w-64 bg-slate-900/80 p-2 rounded-xl border border-slate-700">
-            <span class="text-white font-bold text-sm mb-1">HILL CONTROL</span>
-            <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                <div id="koth-bar-p1" class="h-full bg-cyan-400 transition-all duration-200" style="width: 0%;"></div>
-                <div class="flex-grow"></div>
-                <div id="koth-bar-p2" class="h-full bg-fuchsia-400 transition-all duration-200" style="width: 0%;"></div>
-            </div>
-        </div>
-
-        <div class="flex flex-col items-end" id="hud-p2">
-            <span class="text-fuchsia-400 font-black text-sm tracking-widest opacity-75">GUEST (P2)</span>
-            <div class="flex items-center gap-2">
-                <span class="text-slate-500 font-bold text-xl">5 \</span>
-                <span id="score-p2" class="text-white text-5xl md:text-6xl font-black glow-text">0</span>
-            </div>
-            <div id="hp-bar-container-p2" class="hidden w-32 md:w-48 h-3 bg-slate-800 rounded-full mt-2 overflow-hidden border border-slate-600 shadow-[0_0_10px_rgba(232,121,249,0.2)] flex justify-end">
-                <div id="hp-bar-p2" class="h-full bg-fuchsia-400 transition-all duration-75" style="width: 100%;"></div>
-            </div>
-            <div id="combo-p2" class="text-yellow-400 font-black text-xl italic mt-1 hidden transition-transform transform scale-100">COMBO x2!</div>
+        <!-- Mobile Dash Button -->
+        <div class="w-full flex justify-end pb-10 pr-4 md:hidden pointer-events-auto">
+            <button id="btn-dash" class="w-20 h-20 bg-slate-700/50 rounded-full border-2 border-white/20 text-white font-black shadow-lg active:bg-white/20 transition-colors backdrop-blur-sm">DASH</button>
         </div>
     </div>
-    
-    <div class="w-full flex justify-end pb-10 pr-4 md:hidden pointer-events-auto">
-        <button id="btn-dash" class="w-20 h-20 bg-slate-700/50 rounded-full border-2 border-white/20 text-white font-black shadow-lg active:bg-white/20 transition-colors backdrop-blur-sm">DASH</button>
-    </div>
-</div>
 
-<div id="flash-overlay" class="fixed inset-0 bg-white opacity-0 pointer-events-none z-0 transition-opacity duration-75"></div>
+    <!-- FLASH OVERLAY FOR HITS -->
+    <div id="flash-overlay" class="fixed inset-0 bg-white opacity-0 pointer-events-none z-0 transition-opacity duration-75"></div>
 
-<canvas id="gameCanvas" class="hidden absolute inset-0 w-full h-full -z-10"></canvas>
+    <canvas id="gameCanvas" class="hidden absolute inset-0 w-full h-full -z-10"></canvas>
 
-<script>
-    // --- PROFILES & CUSTOMIZATION ---
-    const ALL_COLORS = [
-        { id: 'cyan', hex: '#22d3ee' }, { id: 'fuchsia', hex: '#e879f9' },
-        { id: 'lime', hex: '#84cc16' }, { id: 'amber', hex: '#fbbf24' },
-        { id: 'red', hex: '#ef4444' }, { id: 'indigo', hex: '#6366f1' },
-        { id: 'white', hex: '#ffffff' }, { id: 'orange', hex: '#f97316' },
-        { id: 'teal', hex: '#14b8a6' }, { id: 'rose', hex: '#f43f5e' }
-    ];
-
-    let myProfile = JSON.parse(localStorage.getItem('sumoProfile')) || { wins: 0, selectedColorId: 'cyan', unlockedColors: ['cyan', 'fuchsia'] };
-    let remoteColorHex = '#e879f9'; 
-    
-    function saveProfile() {
-        localStorage.setItem('sumoProfile', JSON.stringify(myProfile));
-        renderLocker();
-    }
-
-    function winMatch() {
-        myProfile.wins++;
-        let locked = ALL_COLORS.filter(c => !myProfile.unlockedColors.includes(c.id));
-        if (locked.length > 0) {
-            let toUnlock = locked[Math.floor(Math.random() * locked.length)];
-            myProfile.unlockedColors.push(toUnlock.id);
-            showToast(`New Color Unlocked: ${toUnlock.id.toUpperCase()}!`, false);
-        }
-        saveProfile();
-    }
-
-    function renderLocker() {
-        document.getElementById('txt-wins').innerText = myProfile.wins;
-        const container = document.getElementById('color-palette');
-        container.innerHTML = '';
-        ALL_COLORS.forEach(c => {
-            let isUnlocked = myProfile.unlockedColors.includes(c.id);
-            let isSelected = myProfile.selectedColorId === c.id;
-            let btn = document.createElement('button');
-            btn.className = `w-12 h-12 rounded-full transition-all duration-200 color-btn ${isUnlocked ? 'cursor-pointer hover:scale-110' : 'locked'} ${isSelected ? 'selected' : ''}`;
-            btn.style.backgroundColor = c.hex;
-            btn.style.color = c.hex; 
-            if (isUnlocked) { btn.onclick = () => { myProfile.selectedColorId = c.id; saveProfile(); }; } 
-            else { btn.innerHTML = '🔒'; btn.className += ' flex items-center justify-center text-xl text-white'; }
-            container.appendChild(btn);
-        });
-    }
-    renderLocker();
-    function getMyHex() { return ALL_COLORS.find(c => c.id === myProfile.selectedColorId)?.hex || '#22d3ee'; }
-
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let isPlaying = false; let isHost = false; let screenFlashAlpha = 0;
-    
-    // --- TONE.JS AUDIO SETUP (Generative 1-2+ Min Soundtrack) ---
-    let audioInit = false;
-    const sfx = {};
-    
-    async function initAudio() {
-        if (audioInit) return;
-        await Tone.start();
-        
-        // SFX Synths
-        sfx.bump = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4 }).toDestination(); sfx.bump.volume.value = -8;
-        sfx.dash = new Tone.FMSynth({ modulationIndex: 12.22 }).toDestination(); sfx.dash.volume.value = -12;
-        sfx.powerup = new Tone.PolySynth(Tone.Synth).toDestination(); sfx.powerup.volume.value = -10;
-        sfx.bell = new Tone.MetalSynth({ frequency: 200, resonance: 4000 }).toDestination(); sfx.bell.volume.value = -15;
-        sfx.boom = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 8 }).toDestination(); sfx.boom.volume.value = -5;
-        sfx.saw = new Tone.MetalSynth({ frequency: 400, harmonicity: 8 }).toDestination(); sfx.saw.volume.value = -12;
-
-        // Long Generative Soundtrack setup
-        const bgmReverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 }).toDestination();
-        const bgmChorus = new Tone.Chorus(4, 2.5, 0.5).connect(bgmReverb);
-        
-        sfx.bass = new Tone.FMSynth({ harmonicity: 0.5, modulationIndex: 2, oscillator: { type: "sawtooth" }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.5 } }).connect(bgmChorus);
-        sfx.bass.volume.value = -10;
-        
-        sfx.lead = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.1, decay: 0.3, sustain: 0.1, release: 1 } }).connect(bgmReverb);
-        sfx.lead.volume.value = -15;
-        
-        sfx.kick = new Tone.MembraneSynth({ pitchDecay: 0.1, octaves: 4 }).toDestination();
-        sfx.kick.volume.value = -8;
-        
-        sfx.hat = new Tone.MetalSynth({ frequency: 300, envelope: { attack: 0.001, decay: 0.1, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32 }).toDestination();
-        sfx.hat.volume.value = -20;
-
-        // Evolving Chords & Arps (Generates a 1-2 min progressing loop)
-        const bassProgression = ["C2", "G1", "A1", "F1", "C2", "E1", "F1", "G1"];
-        let bassStep = 0;
-        
-        Tone.Transport.scheduleRepeat((time) => {
-            let note = bassProgression[bassStep % bassProgression.length];
-            sfx.bass.triggerAttackRelease(note, "8n", time);
-            sfx.bass.triggerAttackRelease(note, "8n", time + Tone.Time("8n").toSeconds());
-            bassStep++;
-        }, "2n");
-
-        const leadPatterns = [
-            [["C4", "E4"], null, ["G4", "C5"], ["C4", "E4"]],
-            [["A3", "C4"], ["E4", "A4"], null, ["C4", "E4"]],
-            [["F3", "A3"], null, ["C4", "F4"], ["A3", "C4"]],
-            [["G3", "B3"], ["D4", "G4"], ["F4", "B4"], null]
+    <script>
+        // --- PROFILES & CUSTOMIZATION ---
+        const ALL_COLORS = [
+            { id: 'cyan', hex: '#22d3ee' }, { id: 'fuchsia', hex: '#e879f9' },
+            { id: 'lime', hex: '#84cc16' }, { id: 'amber', hex: '#fbbf24' },
+            { id: 'red', hex: '#ef4444' }, { id: 'indigo', hex: '#6366f1' },
+            { id: 'white', hex: '#ffffff' }, { id: 'orange', hex: '#f97316' },
+            { id: 'teal', hex: '#14b8a6' }, { id: 'rose', hex: '#f43f5e' }
         ];
-        let leadStep = 0;
+
+        let myProfile = JSON.parse(localStorage.getItem('sumoProfile')) || {
+            wins: 0,
+            selectedColorId: 'cyan',
+            unlockedColors: ['cyan', 'fuchsia']
+        };
+
+        let remoteColorHex = '#e879f9'; // Default opponent color
         
-        Tone.Transport.scheduleRepeat((time) => {
-            let pattern = leadPatterns[Math.floor(leadStep / 4) % leadPatterns.length];
-            let notes = pattern[leadStep % 4];
-            if (notes) sfx.lead.triggerAttackRelease(notes, "16n", time);
-            leadStep++;
-        }, "4n");
-
-        Tone.Transport.scheduleRepeat((time) => {
-            sfx.kick.triggerAttackRelease("C1", "8n", time);
-            sfx.hat.triggerAttackRelease("32n", time + Tone.Time("16n").toSeconds(), 0.5);
-            sfx.hat.triggerAttackRelease("32n", time + Tone.Time("8n").toSeconds(), 1);
-        }, "4n");
-
-        Tone.Transport.bpm.value = 115;
-        Tone.Transport.start();
-
-        audioInit = true;
-    }
-
-    function speak(text) {
-        if ('speechSynthesis' in window) {
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.volume = 0.8; msg.rate = 1.2; msg.pitch = 0.8;
-            window.speechSynthesis.speak(msg);
-        }
-    }
-
-    function playSound(type, intensity = 1) {
-        if (!audioInit) return;
-        try {
-            if (type === 'bump') sfx.bump.triggerAttackRelease(intensity > 1.2 ? "C2" : "G2", "8n");
-            if (type === 'dash') sfx.dash.triggerAttackRelease("C4", "16n");
-            if (type === 'powerup') sfx.powerup.triggerAttackRelease(["C5", "E5", "G5"], "8n");
-            if (type === 'bell') sfx.bell.triggerAttackRelease("1n");
-            if (type === 'boom') sfx.boom.triggerAttackRelease("C1", "4n");
-            if (type === 'saw') sfx.saw.triggerAttackRelease("8n");
-        } catch (e) { console.warn("Audio fail:", e); }
-    }
-
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    window.addEventListener('resize', resize); resize();
-
-    function switchUI(id) {
-        document.querySelectorAll('.ui-panel').forEach(p => p.classList.add('hidden'));
-        if(id) document.getElementById(id).classList.remove('hidden');
-    }
-
-    function showToast(msg, isError = false) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.className = `fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-white z-50 transition-opacity duration-300 shadow-lg ${isError ? 'bg-red-500' : 'bg-emerald-500'}`;
-        t.style.opacity = 1;
-        setTimeout(() => t.style.opacity = 0, 3000);
-    }
-
-    function triggerFlash() {
-        const flash = document.getElementById('flash-overlay');
-        flash.style.opacity = 0.8; setTimeout(() => { flash.style.opacity = 0; }, 50);
-    }
-
-    function copyId() {
-        const id = document.getElementById('host-id').innerText;
-        if(!id || id === 'Generating...') return;
-        navigator.clipboard.writeText(id).then(() => showToast('Room ID Copied!')).catch(() => {
-            const ta = document.createElement("textarea"); ta.value = id; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
-            showToast('Room ID Copied!');
-        });
-    }
-
-    let peer = null; let conn = null; let selectedMode = 'classic';
-    
-    function initPeer(onOpen) {
-        if (peer) peer.destroy();
-        peer = new Peer();
-        peer.on('open', onOpen);
-        peer.on('error', err => {
-            showToast(err.type === 'peer-unavailable' ? 'Could not find that Room ID!' : 'Network Error.', true);
-            const btn = document.getElementById('btn-join'); if(btn) btn.innerText = 'Connect';
-        });
-        peer.on('disconnected', () => showToast('Disconnected from signaling server.'));
-    }
-
-    function showHostMenu() {
-        initAudio(); switchUI('ui-host'); document.getElementById('host-id').innerText = 'Generating...';
-        initPeer((id) => {
-            document.getElementById('host-id').innerText = id;
-            peer.on('connection', c => {
-                conn = c; isHost = true;
-                selectedMode = document.querySelector('input[name="gamemode"]:checked').value;
-                setupConnection();
-            });
-        });
-    }
-
-    function showJoinMenu() {
-        initAudio(); switchUI('ui-join'); document.getElementById('join-id').value = ''; document.getElementById('btn-join').innerText = 'Connect';
-    }
-
-    function joinGame() {
-        initAudio(); const id = document.getElementById('join-id').value.trim();
-        if(!id) return showToast('Please enter a Room ID.', true);
-        document.getElementById('btn-join').innerText = 'Connecting...';
-        initPeer(() => {
-            conn = peer.connect(id, { reliable: true });
-            conn.on('open', () => { isHost = false; setupConnection(); });
-        });
-    }
-
-    function setupConnection() {
-        switchUI('ui-game'); canvas.classList.remove('hidden'); isPlaying = true;
-        showToast('Connected! Get Ready.');
-        conn.send({ type: 'profile', data: { color: getMyHex() } });
-
-        conn.on('data', (data) => {
-            if (data.type === 'profile') { remoteColorHex = data.data.color; } 
-            else if (isHost && data.type === 'input') { remoteInputs = data.data; } 
-            else if (!isHost) {
-                if (data.type === 'state') { gameState = data.data; selectedMode = gameState.mode; updateKothUI(); }
-                if (data.type === 'event') handleNetworkEvent(data.data);
-            }
-        });
-
-        conn.on('close', () => { showToast('Opponent disconnected!', true); isPlaying = false; setTimeout(() => location.reload(), 2000); });
-        if (isHost) resetMatch();
-    }
-
-    let particles = []; let visualShockwaves = []; let floatingTexts = []; let damageTexts = []; let illuminations = [];
-    let arenaPulse = 0; let screenShake = 0; 
-    
-    function broadcastEvent(evt) {
-        handleNetworkEvent(evt); 
-        if (conn && conn.open && isHost) conn.send({ type: 'event', data: evt });
-    }
-
-    function handleNetworkEvent(evt) {
-        if (gameState.mode === 'lightsout') illuminations.push({ x: evt.x || 0, y: evt.y || 0, radius: 150, life: 1.0 });
-
-        if (evt.type === 'bump') {
-            spawnParticles(evt.x, evt.y, evt.intensity); arenaPulse = 1.0; screenShake = evt.intensity * 10; playSound('bump', evt.intensity);
-            if (evt.intensity > 1.2) floatingTexts.push({ x: evt.x, y: evt.y, text: ["BAM!", "WHACK!", "SMASH!"][Math.floor(Math.random()*3)], life: 1.0, vy: -2 });
-            if (evt.intensity > 1.5) visualShockwaves.push({x: evt.x, y: evt.y, radius: 20, maxRadius: 150, life: 1.0, color: '#ffffff'});
-        } else if (evt.type === 'damage') {
-            damageTexts.push({ x: evt.x, y: evt.y, text: "-" + Math.floor(evt.amount), life: 1.0, vy: -1.5, color: evt.color || '#ef4444' });
-        } else if (evt.type === 'mine') {
-            playSound('boom'); screenShake = 15; spawnParticles(evt.x, evt.y, 3.0, '#ef4444');
-            visualShockwaves.push({x: evt.x, y: evt.y, radius: 10, maxRadius: 200, life: 1.0, color: '#f97316'});
-        } else if (evt.type === 'saw') {
-            playSound('saw'); screenShake = 20; triggerFlash(); spawnParticles(evt.x, evt.y, 4.0, '#ffffff');
-        } else if (evt.type === 'dash') {
-            playSound('dash'); spawnParticles(evt.x, evt.y, 0.5, '#ffffff');
-            visualShockwaves.push({x: evt.x, y: evt.y, radius: 10, maxRadius: 80, life: 1.0, color: '#ffffff'});
-        } else if (evt.type === 'powerup') { playSound('powerup'); spawnParticles(evt.x, evt.y, 1.5, evt.color); } 
-        else if (evt.type === 'bell') { playSound('bell'); }
-    }
-
-    let localInputs = { up: false, down: false, left: false, right: false, dash: false };
-    let remoteInputs = { up: false, down: false, left: false, right: false, dash: false };
-    let joystick = { active: false, baseX: 0, baseY: 0, stickX: 0, stickY: 0 };
-
-    window.addEventListener('keydown', e => {
-        if(e.code === 'ArrowUp' || e.code === 'KeyW') localInputs.up = true;
-        if(e.code === 'ArrowDown' || e.code === 'KeyS') localInputs.down = true;
-        if(e.code === 'ArrowLeft' || e.code === 'KeyA') localInputs.left = true;
-        if(e.code === 'ArrowRight' || e.code === 'KeyD') localInputs.right = true;
-        if(e.code === 'Space') localInputs.dash = true;
-    });
-    window.addEventListener('keyup', e => {
-        if(e.code === 'ArrowUp' || e.code === 'KeyW') localInputs.up = false;
-        if(e.code === 'ArrowDown' || e.code === 'KeyS') localInputs.down = false;
-        if(e.code === 'ArrowLeft' || e.code === 'KeyA') localInputs.left = false;
-        if(e.code === 'ArrowRight' || e.code === 'KeyD') localInputs.right = false;
-        if(e.code === 'Space') localInputs.dash = false;
-    });
-
-    const dashBtn = document.getElementById('btn-dash');
-    dashBtn.addEventListener('touchstart', e => { e.preventDefault(); localInputs.dash = true; }, {passive: false});
-    dashBtn.addEventListener('touchend', e => { e.preventDefault(); localInputs.dash = false; }, {passive: false});
-
-    canvas.addEventListener('touchstart', e => {
-        e.preventDefault();
-        for (let i = 0; i < e.touches.length; i++) {
-            const t = e.touches[i];
-            if (t.clientX > window.innerWidth - 100 && t.clientY > window.innerHeight - 150) continue;
-            if (!joystick.active) {
-                joystick.active = true; joystick.id = t.identifier;
-                joystick.baseX = t.clientX; joystick.baseY = t.clientY;
-                joystick.stickX = t.clientX; joystick.stickY = t.clientY;
-                updateJoystick(); break;
-            }
-        }
-    }, {passive: false});
-
-    canvas.addEventListener('touchmove', e => {
-        e.preventDefault();
-        if(joystick.active) {
-            for (let i = 0; i < e.touches.length; i++) {
-                if (e.touches[i].identifier === joystick.id) {
-                    joystick.stickX = e.touches[i].clientX; joystick.stickY = e.touches[i].clientY;
-                    updateJoystick();
-                }
-            }
-        }
-    }, {passive: false});
-
-    canvas.addEventListener('touchend', e => {
-        e.preventDefault(); let found = false;
-        for (let i = 0; i < e.touches.length; i++) { if (e.touches[i].identifier === joystick.id) found = true; }
-        if (!found && joystick.active) {
-            joystick.active = false;
-            localInputs.up = false; localInputs.down = false; localInputs.left = false; localInputs.right = false;
-        }
-    });
-
-    function updateJoystick() {
-        const dx = joystick.stickX - joystick.baseX; const dy = joystick.stickY - joystick.baseY;
-        const dist = Math.sqrt(dx*dx + dy*dy); const maxDist = 60;
-        if (dist > maxDist) { joystick.stickX = joystick.baseX + (dx / dist) * maxDist; joystick.stickY = joystick.baseY + (dy / dist) * maxDist; }
-        localInputs.up = dy < -20; localInputs.down = dy > 20; localInputs.left = dx < -20; localInputs.right = dx > 20;
-    }
-
-    const TARGET_SCORE = 5; const KOTH_TARGET = 1000;
-    
-    let gameState = {
-        mode: 'classic', status: 'lobby', countdown: 3,
-        powerups: [], mines: [], bumpers: [], sawblades: [],
-        suddenDeathBellRung: false,
-        koth: { x: 0, y: 0, radius: 120, p1Pts: 0, p2Pts: 0 },
-        potato: { x: 0, y: 0, vx: 0, vy: 0, radius: 30, timer: 600, active: false },
-        gridTiles: [], // For crumbling grid
-        p1: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, combo: 1, hp: 1000, maxHp: 1000 },
-        p2: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, combo: 1, hp: 1000, maxHp: 1000 },
-        arena: { radius: 300 }
-    };
-
-    function resetMatch() {
-        gameState.mode = selectedMode;
-        gameState.p1.score = 0; gameState.p2.score = 0;
-        document.getElementById('match-status').dataset.announced = "";
-        resetRound();
-    }
-    function triggerRematch() { if (isHost) resetMatch(); }
-
-    function handleRoundOver(winnerStr) {
-        if (gameState.status !== 'playing') return;
-        gameState.status = 'round_over'; gameState[winnerStr].score++;
-        
-        if (gameState.p1.score >= TARGET_SCORE || gameState.p2.score >= TARGET_SCORE) {
-            gameState.status = 'match_over';
-            if (isHost && winnerStr === 'p1') winMatch();
-        } else { setTimeout(() => { if (isHost) resetRound(); }, 3000); }
-    }
-    
-    let lastGuestMatchStatus = 'lobby';
-
-    function getBasePlayer() {
-        return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, combo: 1, hp: 1000, maxHp: 1000 };
-    }
-
-    function resetRound() {
-        gameState.arena.radius = Math.min(window.innerWidth, window.innerHeight) * 0.45;
-        if(gameState.arena.radius < 180) gameState.arena.radius = 180;
-
-        Object.assign(gameState.p1, getBasePlayer()); gameState.p1.x = -gameState.arena.radius / 2; gameState.p1.y = 0;
-        Object.assign(gameState.p2, getBasePlayer()); gameState.p2.x = gameState.arena.radius / 2; gameState.p2.y = 0;
-        
-        gameState.powerups = []; gameState.mines = []; gameState.sawblades = []; gameState.bumpers = []; 
-        gameState.suddenDeathBellRung = false; illuminations = []; gameState.gridTiles = [];
-        
-        // Mode Specific Setups
-        if (gameState.mode === 'koth') {
-             gameState.koth.p1Pts = 0; gameState.koth.p2Pts = 0; gameState.koth.x = 0; gameState.koth.y = 0;
-             gameState.sawblades.push({ x: 0, y: 150, vx: 5, vy: 3, radius: 20, angle: 0 });
-        } else if (gameState.mode === 'bungee') {
-             gameState.bumpers.push({ angle: Math.PI/2, dist: 150, radius: 30, x: 0, y: 150, isStatic: true });
-             gameState.sawblades.push({ x: 0, y: -150, vx: -2, vy: -2, radius: 25, angle: 0 });
-        } else if (gameState.mode === 'davidgoliath') {
-             // Goliath (Host)
-             gameState.p1.radius = 45; gameState.p1.mass = 4.0; gameState.p1.baseAccel = 0.3;
-             // David (Guest)
-             gameState.p2.radius = 15; gameState.p2.mass = 0.5; gameState.p2.baseAccel = 1.6;
-        } else if (gameState.mode === 'crumbling') {
-             // Generate Grid
-             let tileSize = 60;
-             for(let x = -gameState.arena.radius; x <= gameState.arena.radius; x+=tileSize) {
-                 for(let y = -gameState.arena.radius; y <= gameState.arena.radius; y+=tileSize) {
-                     if(Math.sqrt(x*x + y*y) < gameState.arena.radius) {
-                         gameState.gridTiles.push({ x: x, y: y, size: tileSize, state: 'normal', timer: 60 });
-                     }
-                 }
-             }
-        } else if (gameState.mode === 'vampire') {
-             gameState.p1.hp = 2000; gameState.p1.maxHp = 2000;
-             gameState.p2.hp = 2000; gameState.p2.maxHp = 2000;
-        } else if (gameState.mode === 'hotpotato') {
-             gameState.potato = { x: 0, y: 0, vx: 0, vy: 0, radius: 30, timer: 600, active: true }; // 10 seconds
-        } else if (gameState.mode === 'mayhem') {
-             gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.9; 
-             for(let i=0; i<15; i++) gameState.sawblades.push({ x: (Math.random()-0.5)*400, y: (Math.random()-0.5)*400, vx: (Math.random()-0.5)*35, vy: (Math.random()-0.5)*35, radius: 35, angle: 0 });
-             gameState.p1.hp = 2500; gameState.p1.maxHp = 2500; gameState.p2.hp = 2500; gameState.p2.maxHp = 2500;
-        } else {
-             gameState.bumpers.push({ angle: Math.PI/2, dist: 70, radius: 20, x: 0, y: 70 });
+        function saveProfile() {
+            localStorage.setItem('sumoProfile', JSON.stringify(myProfile));
+            renderLocker();
         }
 
-        gameState.status = 'countdown'; gameState.countdown = 3;
-        speak("3... 2... 1... GO!");
-        let countInterval = setInterval(() => {
-            gameState.countdown--;
-            if (gameState.countdown <= 0) { clearInterval(countInterval); gameState.status = 'playing'; }
-        }, 1000);
-    }
-
-    function applyInputs(p, inputs) {
-        let accel = p.baseAccel;
-        if (p.buff === 'speed') accel *= 2;
-        p.isDashing = p.dashCd > 90; 
-        if (inputs.up) p.vy -= accel; if (inputs.down) p.vy += accel;
-        if (inputs.left) p.vx -= accel; if (inputs.right) p.vx += accel;
-        if (inputs.dash && p.dashCd <= 0) {
-            let speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
-            if (speed > 1) { 
-                let mult = 35 / speed; 
-                p.vx *= mult; p.vy *= mult; p.dashCd = 120; p.isDashing = true;
-                broadcastEvent({ type: 'dash', x: p.x, y: p.y });
+        function winMatch() {
+            myProfile.wins++;
+            // Unlock a random locked color every win (if available)
+            let locked = ALL_COLORS.filter(c => !myProfile.unlockedColors.includes(c.id));
+            if (locked.length > 0) {
+                let toUnlock = locked[Math.floor(Math.random() * locked.length)];
+                myProfile.unlockedColors.push(toUnlock.id);
+                showToast(`New Color Unlocked: ${toUnlock.id.toUpperCase()}!`, false);
             }
+            saveProfile();
         }
-        if (p.dashCd > 0) p.dashCd -= 1;
-    }
 
-    function spawnPowerup() {
-        if(gameState.mode === 'vampire' || gameState.mode === 'davidgoliath' || gameState.mode === 'crumbling') return;
-        let dist = Math.random() * (gameState.arena.radius - 40); let angle = Math.random() * Math.PI * 2;
-        let pType = Math.random() > 0.5 ? 'mass' : 'speed';
-        gameState.powerups.push({ id: Math.random(), x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, type: pType });
-    }
-
-    function manageBuffs(p) {
-        if (p.buffTime > 0) {
-            p.buffTime--;
-            if (p.buffTime <= 0) { p.buff = null; p.mass = gameState.mode === 'davidgoliath' ? p.mass : 1; p.radius = gameState.mode === 'davidgoliath' ? p.radius : 25; }
-        }
-    }
-
-    function updatePhysics() {
-        if (gameState.status !== 'playing') return;
-
-        manageBuffs(gameState.p1); manageBuffs(gameState.p2);
-        applyInputs(gameState.p1, localInputs); applyInputs(gameState.p2, remoteInputs);
-
-        const friction = 0.95;
-        gameState.p1.vx *= friction; gameState.p1.vy *= friction;
-        gameState.p2.vx *= friction; gameState.p2.vy *= friction;
-        
-        gameState.p1.trails.unshift({x: gameState.p1.x, y: gameState.p1.y}); if(gameState.p1.trails.length > 15) gameState.p1.trails.pop();
-        gameState.p2.trails.unshift({x: gameState.p2.x, y: gameState.p2.y}); if(gameState.p2.trails.length > 15) gameState.p2.trails.pop();
-
-        // Mode Logic
-        if (gameState.mode === 'classic') {
-            if (gameState.arena.radius > 60) {
-                gameState.arena.radius -= 0.05;
-                if (gameState.arena.radius < 200 && !gameState.suddenDeathBellRung) { broadcastEvent({ type: 'bell' }); speak("Sudden Death!"); gameState.suddenDeathBellRung = true; }
-            }
-        } else if (gameState.mode === 'koth') {
-            const checkZone = (pStr, p) => {
-                let d = Math.sqrt((p.x - gameState.koth.x)**2 + (p.y - gameState.koth.y)**2);
-                if (d < gameState.koth.radius) gameState.koth[pStr + 'Pts'] += 2;
-            };
-            checkZone('p1', gameState.p1); checkZone('p2', gameState.p2);
-            if (gameState.koth.p1Pts >= KOTH_TARGET) { handleRoundOver('p1'); speak("Player 1 secures the zone!"); }
-            if (gameState.koth.p2Pts >= KOTH_TARGET) { handleRoundOver('p2'); speak("Player 2 secures the zone!"); }
-        } else if (gameState.mode === 'bungee') {
-            let dx = gameState.p2.x - gameState.p1.x; let dy = gameState.p2.y - gameState.p1.y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist > 120) {
-                let force = (dist - 120) * 0.08; // Spring constant
-                gameState.p1.vx += (dx/dist) * force / gameState.p1.mass; gameState.p1.vy += (dy/dist) * force / gameState.p1.mass;
-                gameState.p2.vx -= (dx/dist) * force / gameState.p2.mass; gameState.p2.vy -= (dy/dist) * force / gameState.p2.mass;
-            }
-        } else if (gameState.mode === 'vampire') {
-            gameState.p1.hp -= 2; gameState.p2.hp -= 2;
-            if (gameState.p1.hp <= 0) { broadcastEvent({ type: 'mine', x: gameState.p1.x, y: gameState.p1.y }); handleRoundOver('p2'); speak("Drained! P2 Wins."); gameState.p1.hp=1; }
-            if (gameState.p2.hp <= 0) { broadcastEvent({ type: 'mine', x: gameState.p2.x, y: gameState.p2.y }); handleRoundOver('p1'); speak("Drained! P1 Wins."); gameState.p2.hp=1; }
-        } else if (gameState.mode === 'crumbling') {
-            // Grid decay logic
-            for (let i = gameState.gridTiles.length - 1; i >= 0; i--) {
-                let t = gameState.gridTiles[i];
-                let d1 = Math.max(Math.abs(gameState.p1.x - t.x), Math.abs(gameState.p1.y - t.y));
-                let d2 = Math.max(Math.abs(gameState.p2.x - t.x), Math.abs(gameState.p2.y - t.y));
-                if ((d1 < t.size/2 && gameState.p1.dashCd <= 0) || (d2 < t.size/2 && gameState.p2.dashCd <= 0)) {
-                    if (t.state === 'normal') t.state = 'flashing';
-                }
-                if (t.state === 'flashing') {
-                    t.timer--;
-                    if (t.timer <= 0) t.state = 'broken';
-                }
-                // Fall check
-                if (t.state === 'broken') {
-                    if (d1 < t.size/2.5) { broadcastEvent({ type: 'mine', x: gameState.p1.x, y: gameState.p1.y }); handleRoundOver('p2'); speak("Player 1 fell!"); gameState.p1.x=999; }
-                    if (d2 < t.size/2.5) { broadcastEvent({ type: 'mine', x: gameState.p2.x, y: gameState.p2.y }); handleRoundOver('p1'); speak("Player 2 fell!"); gameState.p2.x=999; }
-                }
-            }
-        } else if (gameState.mode === 'hotpotato') {
-            let pt = gameState.potato;
-            if (pt.active) {
-                pt.x += pt.vx; pt.y += pt.vy; pt.vx *= 0.98; pt.vy *= 0.98; pt.timer--;
+        function renderLocker() {
+            document.getElementById('txt-wins').innerText = myProfile.wins;
+            const container = document.getElementById('color-palette');
+            container.innerHTML = '';
+            ALL_COLORS.forEach(c => {
+                let isUnlocked = myProfile.unlockedColors.includes(c.id);
+                let isSelected = myProfile.selectedColorId === c.id;
                 
-                // Potato Arena Bounce
-                let pd = Math.sqrt(pt.x*pt.x + pt.y*pt.y);
-                if (pd > gameState.arena.radius - pt.radius) {
-                    let nx = pt.x / pd, ny = pt.y / pd;
-                    pt.x = nx * (gameState.arena.radius - pt.radius); pt.y = ny * (gameState.arena.radius - pt.radius);
-                    let dot = pt.vx * nx + pt.vy * ny;
-                    if (dot > 0) { pt.vx -= 2 * dot * nx; pt.vy -= 2 * dot * ny; }
+                let btn = document.createElement('button');
+                btn.className = `w-12 h-12 rounded-full transition-all duration-200 color-btn ${isUnlocked ? 'cursor-pointer hover:scale-110' : 'locked'} ${isSelected ? 'selected' : ''}`;
+                btn.style.backgroundColor = c.hex;
+                btn.style.color = c.hex; // For text-shadow glow
+                if (isUnlocked) {
+                    btn.onclick = () => {
+                        myProfile.selectedColorId = c.id;
+                        saveProfile();
+                    };
+                } else {
+                    btn.innerHTML = '🔒';
+                    btn.className += ' flex items-center justify-center text-xl text-white';
                 }
+                container.appendChild(btn);
+            });
+        }
+        renderLocker();
 
-                // Players hitting potato
-                const hitPotato = (p) => {
-                    let dx = pt.x - p.x; let dy = pt.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < p.radius + pt.radius) {
-                        let nx = dx/dist, ny = dy/dist;
-                        let impact = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
-                        pt.vx += nx * (impact + 5); pt.vy += ny * (impact + 5);
-                        p.vx -= nx * 2; p.vy -= ny * 2;
-                        broadcastEvent({ type: 'bump', x: pt.x, y: pt.y, intensity: 1 });
+        function getMyHex() {
+            return ALL_COLORS.find(c => c.id === myProfile.selectedColorId)?.hex || '#22d3ee';
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let isPlaying = false;
+        let isHost = false;
+        let screenFlashAlpha = 0;
+        
+        // --- TONE.JS AUDIO SETUP ---
+        let audioInit = false;
+        const sfx = {};
+        
+        async function initAudio() {
+            if (audioInit) return;
+            await Tone.start();
+            
+            sfx.bump = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, oscillator: { type: "square" } }).toDestination();
+            sfx.bump.volume.value = -8;
+            sfx.dash = new Tone.FMSynth({ modulationIndex: 12.22, envelope: { attack: 0.01, decay: 0.2 }, modulation: { type: "square" } }).toDestination();
+            sfx.dash.volume.value = -12;
+            sfx.powerup = new Tone.PolySynth(Tone.Synth, { envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 } }).toDestination();
+            sfx.powerup.volume.value = -10;
+            sfx.bell = new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 1.4, release: 0.2 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination();
+            sfx.bell.volume.value = -15;
+            sfx.repel = new Tone.MembraneSynth({ pitchDecay: 0.1, octaves: 1.5, oscillator: { type: "sine" }, envelope: {attack: 0.01, decay: 0.4, sustain: 0, release: 0.1} }).toDestination();
+            sfx.repel.volume.value = -2;
+            sfx.vortex = new Tone.FMSynth({ harmonicity: 0.5, modulationIndex: 10, oscillator: { type: "sine" }, envelope: { attack: 0.1, decay: 0.2, sustain: 1, release: 0.5 } }).toDestination();
+            sfx.vortex.volume.value = -10;
+            sfx.boom = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 8, oscillator: { type: "square" }, envelope: {attack: 0.001, decay: 0.8, sustain: 0, release: 0.1} }).toDestination();
+            sfx.boom.volume.value = -5;
+            // NEW SOUNDS
+            sfx.saw = new Tone.MetalSynth({ frequency: 400, envelope: { attack: 0.01, decay: 0.1, release: 0.1 }, harmonicity: 8, modulationIndex: 20 }).toDestination();
+            sfx.saw.volume.value = -12;
+            sfx.laser = new Tone.FMSynth({ oscillator: { type: 'sawtooth'}, envelope: {attack: 0.01, decay: 0.5, sustain: 0, release: 0.1}, modulationIndex: 20 }).toDestination();
+            sfx.laser.volume.value = -8;
+            sfx.teleport = new Tone.FMSynth({ oscillator: { type: 'sine'}, envelope: {attack: 0.01, decay: 0.1}, modulationIndex: 50 }).toDestination();
+            sfx.teleport.volume.value = -10;
+
+            // Background Music
+            sfx.bgm = new Tone.Sequence((time, note) => {
+                sfx.bump.triggerAttackRelease(note, "16n", time, 0.2);
+            }, ["C2", null, "C2", "D2", null, "F2", "C2", "G1"], "8n");
+            Tone.Transport.start();
+            sfx.bgm.start(0);
+
+            audioInit = true;
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.volume = 0.8; msg.rate = 1.2; msg.pitch = 0.8;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function playSound(type, intensity = 1) {
+            if (!audioInit) return;
+            try {
+                if (type === 'bump') sfx.bump.triggerAttackRelease(intensity > 1.2 ? "C2" : "G2", "8n");
+                if (type === 'dash') sfx.dash.triggerAttackRelease("C4", "16n");
+                if (type === 'powerup') sfx.powerup.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+                if (type === 'bell') sfx.bell.triggerAttackRelease("1n");
+                if (type === 'repel') sfx.repel.triggerAttackRelease("C1", "8n");
+                if (type === 'vortex') sfx.vortex.triggerAttackRelease("G2", "8n");
+                if (type === 'boom') sfx.boom.triggerAttackRelease("C1", "4n");
+                if (type === 'saw') sfx.saw.triggerAttackRelease("8n");
+                if (type === 'laser') sfx.laser.triggerAttackRelease("C4", "4n");
+                if (type === 'teleport') sfx.teleport.triggerAttackRelease("C6", "16n");
+            } catch (e) { console.warn("Audio fail:", e); }
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function switchUI(id) {
+            document.querySelectorAll('.ui-panel').forEach(p => p.classList.add('hidden'));
+            if(id) document.getElementById(id).classList.remove('hidden');
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.className = `fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-white z-50 transition-opacity duration-300 shadow-lg ${isError ? 'bg-red-500' : 'bg-emerald-500'}`;
+            t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 3000);
+        }
+
+        function triggerFlash() {
+            const flash = document.getElementById('flash-overlay');
+            flash.style.opacity = 0.8;
+            setTimeout(() => { flash.style.opacity = 0; }, 50);
+        }
+
+        function copyId() {
+            const id = document.getElementById('host-id').innerText;
+            if(!id || id === 'Generating...') return;
+            navigator.clipboard.writeText(id).then(() => showToast('Room ID Copied!')).catch(() => {
+                const ta = document.createElement("textarea"); ta.value = id; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+                showToast('Room ID Copied!');
+            });
+        }
+
+        let peer = null;
+        let conn = null;
+        let selectedMode = 'classic';
+        let damageTexts = [];
+
+        function initPeer(onOpen) {
+            if (peer) peer.destroy();
+            peer = new Peer();
+            peer.on('open', onOpen);
+            peer.on('error', err => {
+                showToast(err.type === 'peer-unavailable' ? 'Could not find that Room ID!' : 'Network Error.', true);
+                const btn = document.getElementById('btn-join');
+                if(btn) btn.innerText = 'Connect';
+            });
+            peer.on('disconnected', () => showToast('Disconnected from signaling server.'));
+        }
+
+        function showHostMenu() {
+            initAudio();
+            switchUI('ui-host');
+            document.getElementById('host-id').innerText = 'Generating...';
+            initPeer((id) => {
+                document.getElementById('host-id').innerText = id;
+                peer.on('connection', c => {
+                    conn = c;
+                    isHost = true;
+                    selectedMode = document.querySelector('input[name="gamemode"]:checked').value;
+                    setupConnection();
+                });
+            });
+        }
+
+        function showJoinMenu() {
+            initAudio();
+            switchUI('ui-join');
+            document.getElementById('join-id').value = '';
+            document.getElementById('btn-join').innerText = 'Connect';
+        }
+
+        function joinGame() {
+            initAudio();
+            const id = document.getElementById('join-id').value.trim();
+            if(!id) return showToast('Please enter a Room ID.', true);
+            document.getElementById('btn-join').innerText = 'Connecting...';
+            
+            initPeer(() => {
+                conn = peer.connect(id, { reliable: true });
+                conn.on('open', () => {
+                    isHost = false;
+                    setupConnection();
+                });
+            });
+        }
+
+        function setupConnection() {
+            switchUI('ui-game');
+            canvas.classList.remove('hidden');
+            isPlaying = true;
+            showToast('Connected! Get Ready.');
+
+            // Send profile info immediately
+            conn.send({ type: 'profile', data: { color: getMyHex() } });
+
+            conn.on('data', (data) => {
+                if (data.type === 'profile') {
+                    remoteColorHex = data.data.color;
+                } else if (isHost && data.type === 'input') {
+                    remoteInputs = data.data;
+                } else if (!isHost) {
+                    if (data.type === 'state') {
+                        gameState = data.data;
+                        selectedMode = gameState.mode;
+                        updateKothUI();
+                    }
+                    if (data.type === 'event') handleNetworkEvent(data.data);
+                }
+            });
+
+            conn.on('close', () => {
+                showToast('Opponent disconnected!', true);
+                isPlaying = false;
+                setTimeout(() => location.reload(), 2000);
+            });
+
+            if (isHost) resetMatch();
+        }
+
+        let particles = [];
+        let visualShockwaves = []; 
+        let floatingTexts = []; 
+        let arenaPulse = 0;
+        let screenShake = 0;
+        let p1Decoys = [];
+        let p2Decoys = [];
+        let lasers = [];
+
+        function broadcastEvent(evt) {
+            handleNetworkEvent(evt); 
+            if (conn && conn.open && isHost) conn.send({ type: 'event', data: evt });
+        }
+
+        function handleNetworkEvent(evt) {
+            if (evt.type === 'bump') {
+                spawnParticles(evt.x, evt.y, evt.intensity);
+                arenaPulse = 1.0;
+                screenShake = evt.intensity * 10;
+                playSound('bump', evt.intensity);
+                
+                if (evt.intensity > 1.2) {
+                    const texts = ["BAM!", "WHACK!", "SMASH!", "CRASH!", "BOOM!"];
+                    floatingTexts.push({ x: evt.x, y: evt.y, text: texts[Math.floor(Math.random() * texts.length)], life: 1.0, vy: -2 });
+                }
+                if(evt.intensity > 1.5) visualShockwaves.push({x: evt.x, y: evt.y, radius: 20, maxRadius: 150, life: 1.0, color: '#ffffff'});
+            } else if (evt.type === 'damage') {
+                damageTexts.push({ x: evt.x, y: evt.y, text: "-" + Math.floor(evt.amount), life: 1.0, vy: -1.5, color: evt.color || '#ef4444' });
+            } else if (evt.type === 'mine') {
+                playSound('boom');
+                screenShake = 15;
+                spawnParticles(evt.x, evt.y, 3.0, '#ef4444');
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 10, maxRadius: 200, life: 1.0, color: '#f97316'});
+                floatingTexts.push({ x: evt.x, y: evt.y - 20, text: "KABOOM!", life: 1.0, vy: -3, color: '#f97316' });
+            } else if (evt.type === 'saw') {
+                playSound('saw');
+                screenShake = 20;
+                triggerFlash();
+                spawnParticles(evt.x, evt.y, 4.0, '#ffffff');
+                floatingTexts.push({ x: evt.x, y: evt.y - 20, text: "SHREDDED!", life: 1.0, vy: -3, color: '#cbd5e1' });
+            } else if (evt.type === 'dash') {
+                playSound('dash');
+                spawnParticles(evt.x, evt.y, 0.5, '#ffffff');
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 10, maxRadius: 80, life: 1.0, color: '#ffffff'});
+            } else if (evt.type === 'powerup') {
+                playSound('powerup');
+                spawnParticles(evt.x, evt.y, 1.5, evt.color);
+            } else if (evt.type === 'bell') {
+                playSound('bell');
+            } else if (evt.type === 'repel') {
+                playSound('repel');
+                screenShake = 3;
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 30, maxRadius: 250, life: 1.0, color: '#ef4444'});
+            } else if (evt.type === 'vortex') {
+                playSound('vortex');
+                screenShake = 2;
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 250, maxRadius: 10, life: 1.0, color: '#a855f7'}); 
+            } else if (evt.type === 'laser') {
+                playSound('laser');
+                screenShake = 8;
+                lasers.push({ x1: evt.x1, y1: evt.y1, x2: evt.x2, y2: evt.y2, life: 1.0 });
+                spawnParticles(evt.x2, evt.y2, 2.0, '#22d3ee');
+            } else if (evt.type === 'teleport') {
+                playSound('teleport');
+                visualShockwaves.push({x: evt.x, y: evt.y, radius: 5, maxRadius: 100, life: 1.0, color: '#f472b6'});
+                spawnParticles(evt.x, evt.y, 2.0, '#f472b6');
+            }
+        }
+
+        let localInputs = { up: false, down: false, left: false, right: false, dash: false };
+        let remoteInputs = { up: false, down: false, left: false, right: false, dash: false };
+        let joystick = { active: false, baseX: 0, baseY: 0, stickX: 0, stickY: 0 };
+
+        window.addEventListener('keydown', e => {
+            if(e.code === 'ArrowUp' || e.code === 'KeyW') localInputs.up = true;
+            if(e.code === 'ArrowDown' || e.code === 'KeyS') localInputs.down = true;
+            if(e.code === 'ArrowLeft' || e.code === 'KeyA') localInputs.left = true;
+            if(e.code === 'ArrowRight' || e.code === 'KeyD') localInputs.right = true;
+            if(e.code === 'Space') localInputs.dash = true;
+        });
+        window.addEventListener('keyup', e => {
+            if(e.code === 'ArrowUp' || e.code === 'KeyW') localInputs.up = false;
+            if(e.code === 'ArrowDown' || e.code === 'KeyS') localInputs.down = false;
+            if(e.code === 'ArrowLeft' || e.code === 'KeyA') localInputs.left = false;
+            if(e.code === 'ArrowRight' || e.code === 'KeyD') localInputs.right = false;
+            if(e.code === 'Space') localInputs.dash = false;
+        });
+
+        const dashBtn = document.getElementById('btn-dash');
+        dashBtn.addEventListener('touchstart', e => { e.preventDefault(); localInputs.dash = true; }, {passive: false});
+        dashBtn.addEventListener('touchend', e => { e.preventDefault(); localInputs.dash = false; }, {passive: false});
+        dashBtn.addEventListener('mousedown', e => { localInputs.dash = true; });
+        dashBtn.addEventListener('mouseup', e => { localInputs.dash = false; });
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            for (let i = 0; i < e.touches.length; i++) {
+                const t = e.touches[i];
+                if (t.clientX > window.innerWidth - 100 && t.clientY > window.innerHeight - 150) continue;
+                if (!joystick.active) {
+                    joystick.active = true; joystick.id = t.identifier;
+                    joystick.baseX = t.clientX; joystick.baseY = t.clientY;
+                    joystick.stickX = t.clientX; joystick.stickY = t.clientY;
+                    updateJoystick(); break;
+                }
+            }
+        }, {passive: false});
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if(joystick.active) {
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].identifier === joystick.id) {
+                        joystick.stickX = e.touches[i].clientX; joystick.stickY = e.touches[i].clientY;
+                        updateJoystick();
+                    }
+                }
+            }
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            let found = false;
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].identifier === joystick.id) found = true;
+            }
+            if (!found && joystick.active) {
+                joystick.active = false;
+                localInputs.up = false; localInputs.down = false; 
+                localInputs.left = false; localInputs.right = false;
+            }
+        });
+
+        function updateJoystick() {
+            const dx = joystick.stickX - joystick.baseX; const dy = joystick.stickY - joystick.baseY;
+            const dist = Math.sqrt(dx*dx + dy*dy); const maxDist = 60;
+            if (dist > maxDist) {
+                joystick.stickX = joystick.baseX + (dx / dist) * maxDist;
+                joystick.stickY = joystick.baseY + (dy / dist) * maxDist;
+            }
+            localInputs.up = dy < -20; localInputs.down = dy > 20;
+            localInputs.left = dx < -20; localInputs.right = dx > 20;
+        }
+
+        const TARGET_SCORE = 5;
+        const KOTH_TARGET = 1000;
+        
+        let gameState = {
+            mode: 'classic',
+            status: 'lobby', 
+            countdown: 3,
+            powerupIdCounter: 0,
+            mineIdCounter: 0,
+            powerups: [], mines: [], bumpers: [], sawblades: [],
+            suddenDeathBellRung: false,
+            koth: { x: 0, y: 0, radius: 120, p1Pts: 0, p2Pts: 0 },
+            bombTag: { holder: 'p1', timer: 900 },
+            p1: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false, combo: 1, lastHitTime: 0 },
+            p2: { x: 0, y: 0, vx: 0, vy: 0, score: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false, combo: 1, lastHitTime: 0 },
+            arena: { radius: 300 }
+        };
+
+        function resetMatch() {
+            gameState.mode = selectedMode;
+            gameState.p1.score = 0; gameState.p2.score = 0;
+            document.getElementById('match-status').dataset.announced = "";
+            resetRound();
+        }
+
+        function triggerRematch() { if (isHost) resetMatch(); }
+
+        function handleRoundOver(winnerStr) {
+            if (gameState.status !== 'playing') return;
+            gameState.status = 'round_over';
+            gameState[winnerStr].score++;
+            
+            if (gameState.p1.score >= TARGET_SCORE || gameState.p2.score >= TARGET_SCORE) {
+                gameState.status = 'match_over';
+                // Trigger win if it's the host, or guest logic handles it in rendering
+                if (isHost && winnerStr === 'p1') winMatch();
+            } else {
+                setTimeout(() => { if (isHost) resetRound(); }, 3000);
+            }
+        }
+        
+        // Guest win check hack via state change monitoring
+        let lastGuestMatchStatus = 'lobby';
+
+        function getBasePlayer() {
+            return { vx: 0, vy: 0, radius: 25, mass: 1, baseAccel: 0.8, dashCd: 0, buff: null, buffTime: 0, trails: [], isDashing: false, isGhost: false, combo: 1, lastHitTime: 0, hp: 1000, maxHp: 1000 };
+        }
+
+        function resetRound() {
+            gameState.arena.radius = Math.min(window.innerWidth, window.innerHeight) * 0.45;
+            if(gameState.arena.radius < 180) gameState.arena.radius = 180;
+
+            Object.assign(gameState.p1, getBasePlayer()); gameState.p1.x = -gameState.arena.radius / 2; gameState.p1.y = 0;
+            Object.assign(gameState.p2, getBasePlayer()); gameState.p2.x = gameState.arena.radius / 2; gameState.p2.y = 0;
+            
+            gameState.powerups = []; gameState.mines = []; gameState.sawblades = []; gameState.suddenDeathBellRung = false;
+            p1Decoys = []; p2Decoys = [];
+            
+            gameState.koth.p1Pts = 0; gameState.koth.p2Pts = 0;
+            gameState.koth.x = 0; gameState.koth.y = 0;
+            
+            gameState.bombTag.holder = Math.random() > 0.5 ? 'p1' : 'p2';
+            gameState.bombTag.timer = 900; // 15 seconds
+
+            gameState.bumpers = [
+                { angle: 0, dist: 150, radius: 30, x: 150, y: 0 },
+                { angle: Math.PI, dist: 150, radius: 30, x: -150, y: 0 }
+            ];
+
+            if (gameState.mode === 'koth') {
+                 // Add sawblades in KOTH for extra chaos
+                 gameState.sawblades.push({ x: 0, y: 150, vx: 5, vy: 3, radius: 20, angle: 0 });
+                 gameState.sawblades.push({ x: 0, y: -150, vx: -3, vy: -5, radius: 20, angle: 0 });
+            } else if (gameState.mode === 'bombtag') {
+                 gameState.bumpers.push({ angle: Math.PI/2, dist: 100, radius: 40, x: 0, y: 100 });
+                 gameState.bumpers.push({ angle: -Math.PI/2, dist: 100, radius: 40, x: 0, y: -100 });
+            } else if (gameState.mode === 'chaos') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.7; 
+                 if (gameState.arena.radius < 400) gameState.arena.radius = 400;
+                 for(let i=0; i<5; i++) gameState.sawblades.push({ x: (Math.random()-0.5)*300, y: (Math.random()-0.5)*300, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, radius: 25, angle: 0 });
+                 for(let i=0; i<4; i++) gameState.bumpers.push({ angle: i*Math.PI/2, dist: 250, radius: 50, x: 0, y: 0 });
+            } else if (gameState.mode === 'mayhem') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.9; 
+                 if (gameState.arena.radius < 500) gameState.arena.radius = 500;
+                 for(let i=0; i<15; i++) gameState.sawblades.push({ x: (Math.random()-0.5)*400, y: (Math.random()-0.5)*400, vx: (Math.random()-0.5)*35, vy: (Math.random()-0.5)*35, radius: 35, angle: 0 });
+                 for(let i=0; i<8; i++) gameState.bumpers.push({ angle: i*Math.PI/4, dist: 350, radius: 70, x: 0, y: 0 });
+                 gameState.p1.hp = 2500; gameState.p1.maxHp = 2500;
+                 gameState.p2.hp = 2500; gameState.p2.maxHp = 2500;
+            } else if (gameState.mode === 'blackhole') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.45;
+                 if(gameState.arena.radius < 300) gameState.arena.radius = 300;
+                 // Start players further away from the center
+                 gameState.p1.x = -gameState.arena.radius * 0.7; 
+                 gameState.p2.x = gameState.arena.radius * 0.7;
+            } else if (gameState.mode === 'pinball') {
+                 gameState.arena.radius = Math.max(window.innerWidth, window.innerHeight) * 0.55;
+                 if(gameState.arena.radius < 350) gameState.arena.radius = 350;
+                 // Scatter random bumpers for pinball mode
+                 for(let i=0; i<12; i++) {
+                     let a = Math.random() * Math.PI * 2;
+                     let d = Math.random() * (gameState.arena.radius - 80);
+                     gameState.bumpers.push({ angle: a, dist: d, radius: 25 + Math.random()*15, x: Math.cos(a)*d, y: Math.sin(a)*d, isStatic: true });
+                 }
+                 gameState.p1.hp = 1500; gameState.p1.maxHp = 1500;
+                 gameState.p2.hp = 1500; gameState.p2.maxHp = 1500;
+            } else {
+                 gameState.bumpers.push({ angle: Math.PI/2, dist: 70, radius: 20, x: 0, y: 70 });
+            }
+
+            gameState.status = 'countdown'; gameState.countdown = 3;
+            speak("3... 2... 1... GO!");
+            let countInterval = setInterval(() => {
+                gameState.countdown--;
+                if (gameState.countdown <= 0) { clearInterval(countInterval); gameState.status = 'playing'; }
+            }, 1000);
+        }
+
+        function applyInputs(p, inputs) {
+            let accel = p.baseAccel;
+            if (gameState.mode === 'chaos') accel *= 1.5;
+            if (gameState.mode === 'mayhem') accel *= 3.0;
+            if (p.buff === 'speed') accel *= 2;
+            p.isDashing = p.dashCd > (gameState.mode === 'mayhem' ? 60 : 90); 
+            if (inputs.up) p.vy -= accel; if (inputs.down) p.vy += accel;
+            if (inputs.left) p.vx -= accel; if (inputs.right) p.vx += accel;
+            if (inputs.dash && p.dashCd <= 0) {
+                let speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+                if (speed > 1) { 
+                    let mult = (gameState.mode === 'mayhem' ? 50 : 35) / speed; 
+                    p.vx *= mult; p.vy *= mult; p.dashCd = 120; p.isDashing = true;
+                    broadcastEvent({ type: 'dash', x: p.x, y: p.y });
+                }
+            }
+            if (p.dashCd > 0) p.dashCd -= (gameState.mode === 'mayhem' ? 3 : 1);
+            
+            // Combo decay
+            if (Date.now() - p.lastHitTime > 3000) p.combo = 1;
+        }
+
+        function spawnPowerup() {
+            let dist = Math.random() * (gameState.arena.radius - 40); let angle = Math.random() * Math.PI * 2;
+            let r = Math.random();
+            let pType = r > 0.85 ? 'mass' : (r > 0.75 ? 'speed' : (r > 0.6 ? 'laser' : (r > 0.45 ? 'teleport' : (r > 0.3 ? 'shield' : (r > 0.15 ? 'decoy' : (r > 0.05 ? 'ghost' : 'freeze'))))));
+            gameState.powerups.push({ id: gameState.powerupIdCounter++, x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, type: pType });
+        }
+
+        function manageBuffs(p, opponent) {
+            if (p.buffTime > 0) {
+                p.buffTime--;
+                if (p.buff === 'repulsor' && p.buffTime % 60 === 0) {
+                    broadcastEvent({ type: 'repel', x: p.x, y: p.y });
+                    let dx = opponent.x - p.x; let dy = opponent.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 250) { let force = 400 / Math.max(dist, 10); opponent.vx += (dx/dist) * force; opponent.vy += (dy/dist) * force; }
+                }
+                if (p.buff === 'vortex' && p.buffTime % 60 === 0) {
+                    broadcastEvent({ type: 'vortex', x: p.x, y: p.y });
+                    let dx = opponent.x - p.x; let dy = opponent.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 350) { let force = -450 / Math.max(dist, 10); opponent.vx += (dx/dist) * force; opponent.vy += (dy/dist) * force; }
+                }
+                if (p.buff === 'laser' && p.buffTime % 90 === 0) {
+                    // Fire laser at opponent
+                    let dx = opponent.x - p.x; let dy = opponent.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                    let nx = dx/dist, ny = dy/dist;
+                    broadcastEvent({ type: 'laser', x1: p.x, y1: p.y, x2: p.x + nx*1000, y2: p.y + ny*1000 });
+                    opponent.vx += nx * 20; opponent.vy += ny * 20; // Laser knockback
+                    if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') opponent.hp -= 80;
+                }
+                if (p.buff === 'freeze') {
+                    p.vx *= 0.85; p.vy *= 0.85; // Heavy friction for frozen player
+                }
+                if (p.buffTime <= 0) { p.buff = null; p.mass = 1; p.radius = 25; p.isGhost = false; }
+            }
+        }
+
+        function updatePhysics() {
+            if (gameState.status !== 'playing') return;
+
+            manageBuffs(gameState.p1, gameState.p2); manageBuffs(gameState.p2, gameState.p1);
+            applyInputs(gameState.p1, localInputs); applyInputs(gameState.p2, remoteInputs);
+
+            const friction = 0.95;
+            gameState.p1.vx *= friction; gameState.p1.vy *= friction;
+            gameState.p2.vx *= friction; gameState.p2.vy *= friction;
+            
+            gameState.p1.trails.unshift({x: gameState.p1.x, y: gameState.p1.y}); if(gameState.p1.trails.length > 15) gameState.p1.trails.pop();
+            gameState.p2.trails.unshift({x: gameState.p2.x, y: gameState.p2.y}); if(gameState.p2.trails.length > 15) gameState.p2.trails.pop();
+
+            // Black Hole Gravity
+            if (gameState.mode === 'blackhole') {
+                const applyGravity = (pStr, p) => {
+                    let dist = Math.sqrt(p.x**2 + p.y**2);
+                    if (dist > 0) {
+                        let pull = 600 / Math.max(dist, 10);
+                        p.vx -= (p.x/dist) * pull * 0.05;
+                        p.vy -= (p.y/dist) * pull * 0.05;
+                    }
+                    if (dist < 45 && gameState.status === 'playing') {
+                        broadcastEvent({ type: 'mine', x: p.x, y: p.y });
+                        let winner = pStr === 'p1' ? 'p2' : 'p1';
+                        handleRoundOver(winner);
+                        speak("Spaghettified! " + (winner === 'p1' ? "Player 1" : "Player 2") + " wins!");
+                        p.x = 9999; p.y = 9999;
                     }
                 };
-                hitPotato(gameState.p1); hitPotato(gameState.p2);
+                applyGravity('p1', gameState.p1); applyGravity('p2', gameState.p2);
+            }
 
-                if (pt.timer <= 0) {
-                    pt.active = false; broadcastEvent({ type: 'mine', x: pt.x, y: pt.y });
-                    let d1 = Math.sqrt((pt.x-gameState.p1.x)**2 + (pt.y-gameState.p1.y)**2);
-                    let d2 = Math.sqrt((pt.x-gameState.p2.x)**2 + (pt.y-gameState.p2.y)**2);
-                    let winner = d1 > d2 ? 'p1' : 'p2';
-                    handleRoundOver(winner); speak("KABOOM! " + (winner === 'p1' ? "Player 1" : "Player 2") + " survives!");
+            // Mode Logic
+            if (gameState.mode === 'classic') {
+                if (gameState.arena.radius > 60) {
+                    gameState.arena.radius -= 0.05;
+                    if (gameState.arena.radius < 200 && !gameState.suddenDeathBellRung) { broadcastEvent({ type: 'bell' }); speak("Sudden Death!"); gameState.suddenDeathBellRung = true; }
+                }
+            } else if (gameState.mode === 'koth') {
+                // KOTH Zone Logic
+                const checkZone = (pStr, p) => {
+                    let d = Math.sqrt((p.x - gameState.koth.x)**2 + (p.y - gameState.koth.y)**2);
+                    if (d < gameState.koth.radius) gameState.koth[pStr + 'Pts'] += 2; // +2 per frame
+                };
+                checkZone('p1', gameState.p1); checkZone('p2', gameState.p2);
+                
+                // Move KOTH zone occasionally
+                if (Math.random() < 0.002) {
+                    let angle = Math.random() * Math.PI*2;
+                    let dist = Math.random() * (gameState.arena.radius - 150);
+                    gameState.koth.x = Math.cos(angle) * dist; gameState.koth.y = Math.sin(angle) * dist;
+                }
+
+                if (gameState.koth.p1Pts >= KOTH_TARGET) { handleRoundOver('p1'); speak("Player 1 secures the zone!"); }
+                if (gameState.koth.p2Pts >= KOTH_TARGET) { handleRoundOver('p2'); speak("Player 2 secures the zone!"); }
+            } else if (gameState.mode === 'bombtag') {
+                gameState.bombTag.timer--;
+                if (gameState.bombTag.timer <= 0) {
+                    broadcastEvent({ type: 'mine', x: gameState[gameState.bombTag.holder].x, y: gameState[gameState.bombTag.holder].y });
+                    let winner = gameState.bombTag.holder === 'p1' ? 'p2' : 'p1';
+                    handleRoundOver(winner);
+                    speak("Time's up! " + (winner === 'p1' ? "Player 1" : "Player 2") + " wins the round!");
                 }
             }
-        }
 
-        for (let s of gameState.sawblades) {
-            s.x += s.vx; s.y += s.vy; s.angle += 0.2;
-            let d = Math.sqrt(s.x**2 + s.y**2);
-            if (d + s.radius > gameState.arena.radius) {
-                let nx = s.x/d, ny = s.y/d; let dot = s.vx*nx + s.vy*ny;
-                s.vx -= 2 * dot * nx; s.vy -= 2 * dot * ny;
+            // Move Hazards
+            for (let b of gameState.bumpers) {
+                if (!b.isStatic) { b.angle += 0.025; b.x = Math.cos(b.angle) * b.dist; b.y = Math.sin(b.angle) * b.dist; }
             }
-        }
-
-        if (Math.random() < 0.006 && gameState.powerups.length < 2) spawnPowerup();
-
-        gameState.p1.x += gameState.p1.vx; gameState.p1.y += gameState.p1.vy;
-        gameState.p2.x += gameState.p2.vx; gameState.p2.y += gameState.p2.vy;
-
-        const checkPowerup = (p, opponent) => {
-            for (let i = gameState.powerups.length - 1; i >= 0; i--) {
-                let pu = gameState.powerups[i];
-                if (Math.sqrt((p.x - pu.x)**2 + (p.y - pu.y)**2) < p.radius + 15) {
-                    let pColor = pu.type === 'mass' ? '#facc15' : '#4ade80';
-                    if (pu.type === 'mass') { p.mass = 3; p.radius = 35; }
-                    broadcastEvent({ type: 'powerup', x: pu.x, y: pu.y, color: pColor });
-                    gameState.powerups.splice(i, 1);
+            for (let s of gameState.sawblades) {
+                s.x += s.vx; s.y += s.vy; s.angle += 0.2;
+                let d = Math.sqrt(s.x**2 + s.y**2);
+                if (d + s.radius > gameState.arena.radius) {
+                    // Bounce off circular arena
+                    let nx = s.x/d, ny = s.y/d;
+                    let dot = s.vx*nx + s.vy*ny;
+                    s.vx -= 2 * dot * nx; s.vy -= 2 * dot * ny;
                 }
             }
-        };
-        checkPowerup(gameState.p1, gameState.p2); checkPowerup(gameState.p2, gameState.p1);
+            
+            // Decoys
+            const updateDecoys = (p, arr, pColor) => {
+                if (p.buff === 'decoy') {
+                    if (arr.length === 0) { arr.push({ offsetX: 50, offsetY: 50, x: p.x, y: p.y }); arr.push({ offsetX: -50, offsetY: -50, x: p.x, y: p.y }); }
+                    for (let d of arr) { d.x += (p.x + d.offsetX - d.x) * 0.1; d.y += (p.y + d.offsetY - d.y) * 0.1; }
+                } else { arr.length = 0; }
+            };
+            updateDecoys(gameState.p1, p1Decoys); updateDecoys(gameState.p2, p2Decoys);
 
-        const checkHazards = (p) => {
-            for(let b of gameState.bumpers) {
-                let dx = p.x - b.x, dy = p.y - b.y; let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < p.radius + b.radius) {
-                    let nx = dx/dist, ny = dy/dist; p.x += nx * ((p.radius + b.radius) - dist); p.y += ny * ((p.radius + b.radius) - dist);
-                    let dot = p.vx*nx + p.vy*ny;
-                    if(dot < 0) { 
-                        p.vx -= 2 * dot * nx * 1.15; p.vy -= 2 * dot * ny * 1.15; 
-                        if (Math.abs(dot) > 2) broadcastEvent({ type: 'bump', x: b.x - nx*b.radius, y: b.y - ny*b.radius, intensity: Math.abs(dot)/5 });
+            // Powerups and Spawning
+            let puChance = gameState.mode === 'mayhem' ? 0.12 : (gameState.mode === 'chaos' ? 0.04 : 0.006);
+            let puMax = gameState.mode === 'mayhem' ? 30 : (gameState.mode === 'chaos' ? 12 : 2);
+            let mineChance = gameState.mode === 'mayhem' ? 0.06 : (gameState.mode === 'chaos' ? 0.02 : 0.004);
+            let mineMax = gameState.mode === 'mayhem' ? 20 : (gameState.mode === 'chaos' ? 8 : 3);
+            
+            // Mayhem Random Explosions
+            if (gameState.mode === 'mayhem' && Math.random() < 0.015) {
+                let rx = (Math.random()-0.5) * gameState.arena.radius * 1.8;
+                let ry = (Math.random()-0.5) * gameState.arena.radius * 1.8;
+                broadcastEvent({ type: 'mine', x: rx, y: ry });
+            }
+
+            // Spawning Logic based on Time and Chance
+            if (Math.random() < puChance && gameState.powerups.length < puMax) {
+                spawnPowerup();
+            }
+            if (Math.random() < mineChance && gameState.mines.length < mineMax) {
+                let dist = Math.random() * (gameState.arena.radius - 40); let angle = Math.random() * Math.PI * 2;
+                gameState.mines.push({ id: gameState.mineIdCounter++, x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, radius: 15, pulse: 0 });
+            }
+
+            // Move Players
+            gameState.p1.x += gameState.p1.vx; gameState.p1.y += gameState.p1.vy;
+            gameState.p2.x += gameState.p2.vx; gameState.p2.y += gameState.p2.vy;
+
+            // Powerup Collision Check
+            const checkPowerup = (p, opponent) => {
+                for (let i = gameState.powerups.length - 1; i >= 0; i--) {
+                    let pu = gameState.powerups[i];
+                    if (Math.sqrt((p.x - pu.x)**2 + (p.y - pu.y)**2) < p.radius + 15) {
+                        if (pu.type === 'teleport') {
+                            // Instant effect
+                            let oppAngle = Math.atan2(opponent.y, opponent.x);
+                            let oppDist = Math.sqrt(opponent.x**2 + opponent.y**2);
+                            p.x = Math.cos(oppAngle) * (oppDist + 60); p.y = Math.sin(oppAngle) * (oppDist + 60);
+                            broadcastEvent({ type: 'teleport', x: p.x, y: p.y });
+                        } else {
+                            let pColor = pu.type === 'mass' ? '#facc15' : (pu.type === 'speed' ? '#4ade80' : (pu.type === 'laser' ? '#22d3ee' : (pu.type === 'shield' ? '#3b82f6' : (pu.type === 'decoy' ? '#94a3b8' : (pu.type === 'freeze' ? '#67e8f9' : '#ffffff')))));
+                            if (pu.type === 'mass') { p.mass = 3; p.radius = 35; }
+                            if (pu.type === 'ghost') { p.isGhost = true; }
+                            if (pu.type === 'freeze') { opponent.buff = 'freeze'; opponent.buffTime = 120; }
+                            broadcastEvent({ type: 'powerup', x: pu.x, y: pu.y, color: pColor });
+                        }
+                        gameState.powerups.splice(i, 1);
+                    }
+                }
+            };
+            checkPowerup(gameState.p1, gameState.p2); checkPowerup(gameState.p2, gameState.p1);
+
+            // Hazard Collisions
+            const checkHazards = (p) => {
+                for (let i = gameState.mines.length - 1; i >= 0; i--) {
+                    let m = gameState.mines[i]; let dx = p.x - m.x, dy = p.y - m.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < p.radius + m.radius) {
+                        let force = p.buff === 'shield' ? 5 : 25;
+                        p.vx += (dx/dist||1) * force; p.vy += (dy/dist||0) * force;
+                        if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') p.hp -= (p.buff === 'shield' ? 20 : 150);
+                        broadcastEvent({ type: 'mine', x: m.x, y: m.y }); gameState.mines.splice(i, 1); p.combo = 1;
+                        if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: (p.buff === 'shield' ? 20 : 150) });
+                    }
+                }
+                for(let b of gameState.bumpers) {
+                    let dx = p.x - b.x, dy = p.y - b.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < p.radius + b.radius) {
+                        let nx = dx/dist, ny = dy/dist; p.x += nx * ((p.radius + b.radius) - dist); p.y += ny * ((p.radius + b.radius) - dist);
+                        
+                        let bxVel = b.isStatic ? 0 : -Math.sin(b.angle)*b.dist*0.025;
+                        let byVel = b.isStatic ? 0 : Math.cos(b.angle)*b.dist*0.025;
+                        let dot = (p.vx - bxVel)*nx + (p.vy - byVel)*ny;
+                        
+                        if(dot < 0) { 
+                            let bMult = (gameState.mode === 'pinball') ? 2.5 : 1.15;
+                            p.vx -= 2 * dot * nx * bMult; p.vy -= 2 * dot * ny * bMult; 
+                            if (Math.abs(dot) > 2) {
+                                broadcastEvent({ type: 'bump', x: b.x - nx*b.radius, y: b.y - ny*b.radius, intensity: Math.abs(dot)/5 });
+                                if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                                    p.hp -= Math.abs(dot) * 1.5;
+                                    broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: Math.abs(dot) * 1.5 });
+                                }
+                            }
+                        }
+                    }
+                }
+                for(let s of gameState.sawblades) {
+                    let dx = p.x - s.x, dy = p.y - s.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < p.radius + s.radius) {
+                        let nx = dx/dist, ny = dy/dist;
+                        p.vx += nx * 30; p.vy += ny * 30; // Massive hit
+                        if (gameState.mode === 'chaos' || gameState.mode === 'mayhem') {
+                            p.hp -= 25;
+                            broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: 25 });
+                        }
+                        broadcastEvent({ type: 'saw', x: s.x, y: s.y });
+                        p.combo = 1; // Drop combo
+                    }
+                }
+            };
+            checkHazards(gameState.p1); checkHazards(gameState.p2);
+
+            // Player Elastic Collision & Combos
+            let dx = gameState.p2.x - gameState.p1.x; let dy = gameState.p2.y - gameState.p1.y;
+            let dist = Math.sqrt(dx * dx + dy * dy); let minDist = gameState.p1.radius + gameState.p2.radius;
+
+            if (dist < minDist && dist !== 0) {
+                let nx = dx / dist, ny = dy / dist; let overlap = minDist - dist;
+                
+                // Bomb Tag Transfer Check
+                if (gameState.mode === 'bombtag' && gameState.bombTag.timer > 0) {
+                    if (gameState.bombTag.holder === 'p1' && gameState.p1.lastHitTime < Date.now() - 500) { gameState.bombTag.holder = 'p2'; gameState.p1.lastHitTime = Date.now(); gameState.p2.lastHitTime = Date.now(); playSound('powerup'); }
+                    else if (gameState.bombTag.holder === 'p2' && gameState.p2.lastHitTime < Date.now() - 500) { gameState.bombTag.holder = 'p1'; gameState.p1.lastHitTime = Date.now(); gameState.p2.lastHitTime = Date.now(); playSound('powerup'); }
+                }
+
+                let m1 = (gameState.p1.buff === 'shield' ? gameState.p1.mass * 5 : gameState.p1.mass) * (gameState.p1.isDashing ? 3 : 1);
+                let m2 = (gameState.p2.buff === 'shield' ? gameState.p2.mass * 5 : gameState.p2.mass) * (gameState.p2.isDashing ? 3 : 1);
+                
+                let ratio1 = m2 / (m1+m2); let ratio2 = m1 / (m1+m2);
+                gameState.p1.x -= nx * overlap * ratio1; gameState.p1.y -= ny * overlap * ratio1;
+                gameState.p2.x += nx * overlap * ratio2; gameState.p2.y += ny * overlap * ratio2;
+
+                let velAlongNormal = (gameState.p1.vx - gameState.p2.vx) * nx + (gameState.p1.vy - gameState.p2.vy) * ny;
+                if (velAlongNormal > 0) {
+                    let elasticity = gameState.mode === 'pinball' ? 2.0 : 1.1;
+                    let j = -(1 + elasticity) * velAlongNormal; j /= (1/m1 + 1/m2);
+                    
+                    // Combo multiplier applies to the force you exert
+                    let forceOn1 = (j / m1) * (1 + (gameState.p2.combo * 0.15));
+                    let forceOn2 = -(j / m2) * (1 + (gameState.p1.combo * 0.15));
+                    
+                    gameState.p1.vx += forceOn1 * nx; gameState.p1.vy += forceOn1 * ny;
+                    gameState.p2.vx += forceOn2 * nx; gameState.p2.vy += forceOn2 * ny;
+
+                    // Update Combos
+                    if (gameState.p1.isDashing || velAlongNormal > 10) { gameState.p1.combo = Math.min(10, gameState.p1.combo + 1); gameState.p1.lastHitTime = Date.now(); gameState.p2.combo = 1;}
+                    else if (gameState.p2.isDashing) { gameState.p2.combo = Math.min(10, gameState.p2.combo + 1); gameState.p2.lastHitTime = Date.now(); gameState.p1.combo = 1;}
+
+                    let impact = Math.abs(j);
+                    if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                        let dmgMult = gameState.mode === 'mayhem' ? 4 : (gameState.mode === 'pinball' ? 2 : 3);
+                        let dmg1 = Math.abs(forceOn1) * dmgMult;
+                        let dmg2 = Math.abs(forceOn2) * dmgMult;
+                        gameState.p1.hp -= dmg1;
+                        gameState.p2.hp -= dmg2;
+                        if(dmg1 > 5) broadcastEvent({ type: 'damage', x: gameState.p1.x, y: gameState.p1.y, amount: dmg1, color: '#fuchsia' }); // P2 hit P1
+                        if(dmg2 > 5) broadcastEvent({ type: 'damage', x: gameState.p2.x, y: gameState.p2.y, amount: dmg2, color: '#cyan' }); // P1 hit P2
+                        // Extra mayhem explosions on heavy hit
+                        if (gameState.mode === 'mayhem' && impact > 8) {
+                            broadcastEvent({ type: 'mine', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2 });
+                        }
+                    }
+
+                    if (impact > 5) broadcastEvent({ type: 'bump', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2, intensity: Math.min(5, impact / 5) });
+                }
+            }
+
+            // Arena Bounds Check
+            const handleBounds = (p, pStr) => {
+                let dist = Math.sqrt(p.x**2 + p.y**2);
+                
+                if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                    if (dist > gameState.arena.radius - p.radius) {
+                        let nx = p.x / dist, ny = p.y / dist;
+                        p.x = nx * (gameState.arena.radius - p.radius);
+                        p.y = ny * (gameState.arena.radius - p.radius);
+                        let dot = p.vx * nx + p.vy * ny;
+                        if (dot > 0) { 
+                            let bounce = gameState.mode === 'pinball' ? 1.5 : 0.8;
+                            p.vx -= 2 * dot * nx * bounce; p.vy -= 2 * dot * ny * bounce; 
+                        }
+                        if (dot > 5) {
+                            p.hp -= dot * 1.5;
+                            broadcastEvent({ type: 'damage', x: p.x, y: p.y, amount: dot * 1.5, color: '#fbbf24' });
+                        }
+                    }
+                    if (p.hp <= 0 && gameState.status === 'playing') {
+                        broadcastEvent({ type: 'mine', x: p.x, y: p.y });
+                        let winner = pStr === 'p1' ? 'p2' : 'p1';
+                        handleRoundOver(winner);
+                        speak("Obliteration! " + (winner === 'p1' ? "Player 1" : "Player 2") + " wins the round!");
+                    }
+                    return;
+                }
+
+                if (dist > gameState.arena.radius) {
+                    if (p.isGhost) { p.x *= -0.95; p.y *= -0.95; broadcastEvent({ type: 'dash', x: p.x, y: p.y }); } 
+                    else if (gameState.mode === 'classic' || gameState.mode === 'bombtag') { 
+                        let winner = pStr === 'p1' ? 'p2' : 'p1';
+                        handleRoundOver(winner); 
+                        speak("Ring out! " + (winner === 'p1' ? "Player 1" : "Player 2") + " wins the round!");
+                    }
+                    else if (gameState.mode === 'koth') {
+                        // In KOTH, out of bounds just deals damage or respawns you with penalty
+                        p.x = 0; p.y = 0; p.vx = 0; p.vy = 0;
+                        gameState.koth[pStr+'Pts'] = Math.max(0, gameState.koth[pStr+'Pts'] - 100);
+                        broadcastEvent({ type: 'mine', x: 0, y: 0 }); // Explosion on respawn
                     }
                 }
             }
-            for(let s of gameState.sawblades) {
-                let dx = p.x - s.x, dy = p.y - s.y; let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < p.radius + s.radius) {
-                    let nx = dx/dist, ny = dy/dist; p.vx += nx * 30; p.vy += ny * 30;
-                    broadcastEvent({ type: 'saw', x: s.x, y: s.y });
-                    if(gameState.mode === 'vampire') p.hp -= 200;
-                }
-            }
-        };
-        checkHazards(gameState.p1); checkHazards(gameState.p2);
-
-        // Player Collision
-        let dx = gameState.p2.x - gameState.p1.x; let dy = gameState.p2.y - gameState.p1.y;
-        let dist = Math.sqrt(dx * dx + dy * dy); let minDist = gameState.p1.radius + gameState.p2.radius;
-
-        if (dist < minDist && dist !== 0) {
-            let nx = dx / dist, ny = dy / dist; let overlap = minDist - dist;
-            let m1 = gameState.p1.mass * (gameState.p1.isDashing ? 3 : 1);
-            let m2 = gameState.p2.mass * (gameState.p2.isDashing ? 3 : 1);
-            let ratio1 = m2 / (m1+m2); let ratio2 = m1 / (m1+m2);
-            gameState.p1.x -= nx * overlap * ratio1; gameState.p1.y -= ny * overlap * ratio1;
-            gameState.p2.x += nx * overlap * ratio2; gameState.p2.y += ny * overlap * ratio2;
-
-            let velAlongNormal = (gameState.p1.vx - gameState.p2.vx) * nx + (gameState.p1.vy - gameState.p2.vy) * ny;
-            if (velAlongNormal > 0) {
-                let j = -(1 + 1.1) * velAlongNormal; j /= (1/m1 + 1/m2);
-                let forceOn1 = (j / m1); let forceOn2 = -(j / m2);
-                gameState.p1.vx += forceOn1 * nx; gameState.p1.vy += forceOn1 * ny;
-                gameState.p2.vx += forceOn2 * nx; gameState.p2.vy += forceOn2 * ny;
-
-                let impact = Math.abs(j);
-                if (impact > 5) broadcastEvent({ type: 'bump', x: (gameState.p1.x + gameState.p2.x)/2, y: (gameState.p1.y + gameState.p2.y)/2, intensity: Math.min(5, impact / 5) });
-                
-                if (gameState.mode === 'vampire') {
-                    let dmg = impact * 2;
-                    if(forceOn2 < 0) { gameState.p2.hp -= dmg; gameState.p1.hp = Math.min(gameState.p1.maxHp, gameState.p1.hp + dmg*0.5); broadcastEvent({ type: 'damage', x: gameState.p2.x, y: gameState.p2.y, amount: dmg }); }
-                    if(forceOn1 > 0) { gameState.p1.hp -= dmg; gameState.p2.hp = Math.min(gameState.p2.maxHp, gameState.p2.hp + dmg*0.5); broadcastEvent({ type: 'damage', x: gameState.p1.x, y: gameState.p1.y, amount: dmg }); }
-                }
-            }
+            if (gameState.status === 'playing') { handleBounds(gameState.p1, 'p1'); handleBounds(gameState.p2, 'p2'); }
         }
 
-        const handleBounds = (p, pStr) => {
-            let dist = Math.sqrt(p.x**2 + p.y**2);
-            if (gameState.mode === 'mayhem' || gameState.mode === 'vampire') {
-                if (dist > gameState.arena.radius - p.radius) {
-                    let nx = p.x / dist, ny = p.y / dist;
-                    p.x = nx * (gameState.arena.radius - p.radius); p.y = ny * (gameState.arena.radius - p.radius);
-                    let dot = p.vx * nx + p.vy * ny;
-                    if (dot > 0) { p.vx -= 2 * dot * nx * 0.8; p.vy -= 2 * dot * ny * 0.8; }
-                }
-                return;
-            }
-
-            if (dist > gameState.arena.radius) {
-                if (gameState.mode === 'koth') {
-                    p.x = 0; p.y = 0; p.vx = 0; p.vy = 0;
-                    gameState.koth[pStr+'Pts'] = Math.max(0, gameState.koth[pStr+'Pts'] - 100);
-                    broadcastEvent({ type: 'mine', x: 0, y: 0 });
-                } else if (gameState.mode !== 'crumbling') {
-                    let winner = pStr === 'p1' ? 'p2' : 'p1'; handleRoundOver(winner); 
-                    speak("Ring out! " + (winner === 'p1' ? "Player 1" : "Player 2") + " wins the round!");
-                }
-            }
+        function spawnParticles(x, y, intensity = 1, colorOverride = null) {
+            for(let i=0; i<15+Math.floor(20*intensity); i++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*25*intensity, vy: (Math.random()-0.5)*25*intensity, life: 1.0+Math.random()*0.5, color: colorOverride || '#ffffff' });
         }
-        if (gameState.status === 'playing') { handleBounds(gameState.p1, 'p1'); handleBounds(gameState.p2, 'p2'); }
-    }
 
-    function spawnParticles(x, y, intensity = 1, colorOverride = null) {
-        for(let i=0; i<15+Math.floor(20*intensity); i++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*25*intensity, vy: (Math.random()-0.5)*25*intensity, life: 1.0+Math.random()*0.5, color: colorOverride || '#ffffff' });
-    }
-
-    function drawEntities() {
-        // Grid / Background
-        if (gameState.mode === 'crumbling') {
-            for (let t of gameState.gridTiles) {
-                if (t.state === 'broken') continue;
-                ctx.beginPath(); ctx.rect(t.x - t.size/2 + 2, t.y - t.size/2 + 2, t.size - 4, t.size - 4);
-                if (t.state === 'normal') { ctx.fillStyle = 'rgba(30, 41, 59, 0.8)'; ctx.strokeStyle = '#334155'; }
-                else if (t.state === 'flashing') { ctx.fillStyle = `rgba(239, 68, 68, ${Math.abs(Math.sin(t.timer/5))})`; ctx.strokeStyle = '#ef4444'; }
-                ctx.fill(); ctx.stroke();
-            }
-        } else {
+        function drawEntities() {
+            // Background Grid
             let isDanger = (gameState.mode === 'classic' && gameState.arena.radius < 200) || gameState.mode === 'koth';
-            ctx.strokeStyle = `rgba(${isDanger?239:255}, 68, ${isDanger?68:255}, 0.05)`; ctx.lineWidth = 1;
+            let gridRed = isDanger ? 239 : 255;
+            let gridBlue = isDanger ? 68 : 255;
+            
+            ctx.strokeStyle = `rgba(${gridRed}, 68, ${gridBlue}, 0.05)`;
+            if (gameState.mode === 'classic' && gameState.arena.radius < 200) ctx.strokeStyle = 'rgba(239, 68, 68, 0.15)';
+            
+            ctx.lineWidth = 1;
             const gridSize = 80; const off = (Date.now() / (isDanger ? 10 : 50)) % gridSize;
             ctx.beginPath();
             for (let x = -canvas.width; x < canvas.width; x += gridSize) { ctx.moveTo(x + off, -canvas.height); ctx.lineTo(x + off, canvas.height); }
             for (let y = -canvas.height; y < canvas.height; y += gridSize) { ctx.moveTo(-canvas.width, y + off); ctx.lineTo(canvas.width, y + off); }
             ctx.stroke();
-        }
 
-        // Bungee Tether
-        if (gameState.mode === 'bungee') {
-            ctx.beginPath(); ctx.moveTo(gameState.p1.x, gameState.p1.y); ctx.lineTo(gameState.p2.x, gameState.p2.y);
-            let dx = gameState.p2.x - gameState.p1.x; let dy = gameState.p2.y - gameState.p1.y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            ctx.strokeStyle = dist > 120 ? '#ef4444' : '#ffffff'; ctx.lineWidth = 4;
-            ctx.setLineDash([10, 10]); ctx.lineDashOffset = -Date.now()/50; ctx.stroke(); ctx.setLineDash([]);
-        }
+            // KOTH Zone
+            if (gameState.mode === 'koth') {
+                ctx.beginPath();
+                ctx.arc(gameState.koth.x, gameState.koth.y, gameState.koth.radius, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(74, 222, 128, ${0.1 + Math.sin(Date.now()/200)*0.1})`;
+                ctx.fill();
+                ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 4;
+                ctx.setLineDash([15, 15]); ctx.lineDashOffset = -Date.now()/50;
+                ctx.stroke(); ctx.setLineDash([]);
+            }
 
-        if (gameState.mode === 'koth') {
-            ctx.beginPath(); ctx.arc(gameState.koth.x, gameState.koth.y, gameState.koth.radius, 0, Math.PI*2);
-            ctx.fillStyle = `rgba(74, 222, 128, ${0.1 + Math.sin(Date.now()/200)*0.1})`; ctx.fill();
-            ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 4; ctx.setLineDash([15, 15]); ctx.lineDashOffset = -Date.now()/50; ctx.stroke(); ctx.setLineDash([]);
-        }
-
-        // Arena Ring
-        if (gameState.mode !== 'crumbling') {
+            // Arena Ring
             arenaPulse = Math.max(0, arenaPulse - 0.05);
             ctx.beginPath(); ctx.arc(0, 0, gameState.arena.radius, 0, Math.PI*2);
-            if (gameState.mode === 'mayhem' || gameState.mode === 'vampire') {
-                let colorBase = gameState.mode === 'mayhem' ? '232, 121, 249' : '239, 68, 68';
-                ctx.strokeStyle = `rgba(${colorBase}, ${0.5 + arenaPulse*0.8})`; ctx.lineWidth = 10 + (arenaPulse * 20); ctx.stroke();
+            if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                let colorBase = gameState.mode === 'mayhem' ? '232, 121, 249' : (gameState.mode === 'pinball' ? '74, 222, 128' : '239, 68, 68');
+                ctx.strokeStyle = `rgba(${colorBase}, ${0.5 + arenaPulse*0.8})`;
+                ctx.lineWidth = (gameState.mode === 'mayhem' ? 20 : 10) + (arenaPulse * 20); ctx.stroke();
+                ctx.strokeStyle = `rgba(${colorBase}, 0.2)`;
+                ctx.lineWidth = gameState.mode === 'mayhem' ? 80 : 40; ctx.stroke();
             } else {
-                ctx.strokeStyle = `rgba(255,255,255, ${0.2 + arenaPulse*0.6})`; ctx.lineWidth = 6 + (arenaPulse * 15); ctx.stroke();
+                ctx.strokeStyle = `rgba(${isDanger?'239,68,68':'255,255,255'}, ${0.2 + arenaPulse*0.6})`;
+                ctx.lineWidth = 6 + (arenaPulse * 15); ctx.stroke();
             }
-        }
 
-        // Hazards
-        for (let b of gameState.bumpers) {
-            ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.shadowColor = '#94a3b8';
-            ctx.shadowBlur = 10; ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
-        }
-        for (let s of gameState.sawblades) {
-            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
-            ctx.beginPath();
-            for(let i=0; i<8; i++) { ctx.lineTo(Math.cos(i*Math.PI/4)*s.radius, Math.sin(i*Math.PI/4)*s.radius); ctx.lineTo(Math.cos(i*Math.PI/4+0.2)*(s.radius+10), Math.sin(i*Math.PI/4+0.2)*(s.radius+10)); }
-            ctx.closePath();
-            ctx.fillStyle = '#64748b'; ctx.fill(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2; ctx.stroke();
-            ctx.beginPath(); ctx.arc(0,0, s.radius/2, 0, Math.PI*2); ctx.fillStyle = '#ef4444'; ctx.fill();
-            ctx.restore();
-        }
+            // Black Hole
+            if (gameState.mode === 'blackhole') {
+                ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI*2);
+                ctx.fillStyle = '#000000'; ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 30 + Math.sin(Date.now()/100)*10;
+                ctx.fill(); ctx.shadowBlur = 0;
+                
+                // Swirl lines
+                for(let i=0; i<3; i++) {
+                    let angle = (Date.now()/200) + (i * Math.PI*2/3);
+                    ctx.beginPath(); ctx.arc(0,0, 45 + Math.random()*20, angle, angle + Math.PI/2);
+                    ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 3; ctx.stroke();
+                }
+            }
 
-        for (let pu of gameState.powerups) {
-            ctx.beginPath(); ctx.arc(pu.x, pu.y, 12, 0, Math.PI*2);
-            ctx.fillStyle = pu.type === 'mass' ? '#facc15' : '#4ade80';
-            ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
-        }
-        
-        // Hot Potato
-        if (gameState.mode === 'hotpotato' && gameState.potato.active) {
-            let pt = gameState.potato;
-            let pulse = Math.abs(Math.sin(Date.now() / Math.max(50, pt.timer)));
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius + (pulse*5), 0, Math.PI*2);
-            ctx.fillStyle = `rgba(249, 115, 22, ${0.8 + pulse*0.2})`; ctx.shadowColor = '#f97316'; ctx.shadowBlur = 20 * pulse;
-            ctx.fill(); ctx.shadowBlur = 0;
-            ctx.fillStyle = 'white'; ctx.font = '900 24px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(Math.ceil(pt.timer / 60), pt.x, pt.y);
-        }
+            // Bumpers & Sawblades
+            for (let b of gameState.bumpers) {
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+                if (gameState.mode === 'pinball') {
+                    ctx.fillStyle = `rgba(74, 222, 128, ${0.4 + Math.sin(Date.now()/150 + b.x)*0.3})`;
+                    ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 6; ctx.shadowColor = '#4ade80';
+                } else {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.shadowColor = '#94a3b8';
+                }
+                ctx.shadowBlur = 10; ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+            }
+            for (let s of gameState.sawblades) {
+                ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
+                ctx.beginPath();
+                for(let i=0; i<8; i++) { ctx.lineTo(Math.cos(i*Math.PI/4)*s.radius, Math.sin(i*Math.PI/4)*s.radius); ctx.lineTo(Math.cos(i*Math.PI/4+0.2)*(s.radius+10), Math.sin(i*Math.PI/4+0.2)*(s.radius+10)); }
+                ctx.closePath();
+                ctx.fillStyle = '#64748b'; ctx.fill();
+                ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.beginPath(); ctx.arc(0,0, s.radius/2, 0, Math.PI*2); ctx.fillStyle = '#ef4444'; ctx.fill();
+                ctx.restore();
+            }
 
-        // VFX
-        for (let i = visualShockwaves.length - 1; i >= 0; i--) {
-            let sw = visualShockwaves[i];
-            ctx.beginPath(); ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI*2);
-            ctx.strokeStyle = sw.color; ctx.globalAlpha = sw.life; ctx.lineWidth = 8 * sw.life; ctx.stroke();
-            sw.radius += (sw.maxRadius - sw.radius) * 0.15; sw.life -= 0.04; if(sw.life <= 0) visualShockwaves.splice(i, 1);
-        }
-        ctx.globalAlpha = 1.0;
-        for(let i=particles.length-1; i>=0; i--) {
-            let p = particles[i]; p.x += p.vx; p.y += p.vy; p.vx *= 0.9; p.vy *= 0.9; p.life -= 0.04;
-            if(p.life <= 0) particles.splice(i, 1);
-            else { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
-        }
-        ctx.globalAlpha = 1.0;
+            // Powerups & Mines
+            for (let pu of gameState.powerups) {
+                ctx.beginPath(); ctx.arc(pu.x, pu.y, 12, 0, Math.PI*2);
+                ctx.fillStyle = pu.type === 'mass' ? '#facc15' : (pu.type === 'speed' ? '#4ade80' : (pu.type === 'laser' ? '#22d3ee' : (pu.type === 'teleport' ? '#f472b6' : (pu.type === 'shield' ? '#3b82f6' : (pu.type === 'decoy' ? '#94a3b8' : (pu.type === 'freeze' ? '#67e8f9' : '#ffffff'))))));
+                ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
+            }
+            for (let m of gameState.mines) {
+                m.pulse = (m.pulse || 0) + 0.1;
+                ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2); ctx.fillStyle = '#1e293b'; ctx.fill();
+                let pA = 0.5 + Math.sin(m.pulse)*0.5; ctx.strokeStyle = `rgba(249, 115, 22, ${pA})`; ctx.lineWidth = 3; ctx.stroke();
+                ctx.beginPath(); ctx.arc(m.x, m.y, 4, 0, Math.PI*2); ctx.fillStyle = `rgba(239, 68, 68, ${pA})`; ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 10 * pA; ctx.fill(); ctx.shadowBlur = 0;
+            }
 
-        const drawPlayer = (p, baseColor) => {
-            if (p.x === 999) return; // Dead in crumbling grid
-            let activeColor = baseColor;
-            if (p.buff) { if (p.buff === 'mass') activeColor = '#facc15'; else if (p.buff === 'speed') activeColor = '#4ade80'; }
+            // Lasers
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                let l = lasers[i];
+                ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2);
+                ctx.strokeStyle = `rgba(34, 211, 238, ${l.life})`; ctx.lineWidth = 15 * l.life;
+                ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 20; ctx.stroke(); ctx.shadowBlur = 0;
+                l.life -= 0.1; if(l.life <= 0) lasers.splice(i, 1);
+            }
+
+            // Shockwaves & Particles
+            for (let i = visualShockwaves.length - 1; i >= 0; i--) {
+                let sw = visualShockwaves[i];
+                ctx.beginPath(); ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI*2);
+                ctx.strokeStyle = sw.color; ctx.globalAlpha = sw.life; ctx.lineWidth = 8 * sw.life; ctx.stroke();
+                sw.radius += (sw.maxRadius - sw.radius) * 0.15; sw.life -= 0.04; if(sw.life <= 0) visualShockwaves.splice(i, 1);
+            }
+            ctx.globalAlpha = 1.0;
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.vx *= 0.9; p.vy *= 0.9; p.life -= 0.04;
+                if(p.life <= 0) particles.splice(i, 1);
+                else { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Players
+            const drawPlayer = (p, baseColor, isDecoy = false) => {
+                let activeColor = baseColor;
+                let isBombHolder = (gameState.mode === 'bombtag' && gameState.bombTag.holder === (p === gameState.p1 ? 'p1' : 'p2') && !isDecoy);
+
+                if (!isDecoy && p.buff) {
+                    if (p.buff === 'mass') activeColor = '#facc15'; else if (p.buff === 'speed') activeColor = '#4ade80';
+                    else if (p.buff === 'decoy') activeColor = '#94a3b8'; else if (p.buff === 'freeze') activeColor = '#67e8f9';
+                }
+                if (p.isGhost && !isDecoy) ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.2;
+                if (isDecoy) ctx.globalAlpha = 0.6; 
+                
+                if (p.isDashing && !isDecoy) { ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + Math.random()*10, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill(); }
+                
+                // Freeze Block visual
+                if (p.buff === 'freeze' && !isDecoy) { ctx.beginPath(); ctx.rect(p.x - p.radius - 5, p.y - p.radius - 5, p.radius*2 + 10, p.radius*2 + 10); ctx.fillStyle = 'rgba(103, 232, 249, 0.5)'; ctx.fill(); ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 4; ctx.stroke(); }
+                
+                // Bomb Holder visual
+                if (isBombHolder) {
+                    let pulse = Math.abs(Math.sin(Date.now() / (Math.max(100, gameState.bombTag.timer))));
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 15 + (pulse * 10), 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(239, 68, 68, ${0.3 + pulse * 0.5})`; ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = '900 24px Inter'; ctx.textAlign = 'center'; ctx.fillText(Math.ceil(gameState.bombTag.timer / 60), p.x, p.y - p.radius - 20);
+                }
+
+                if (p.trails && p.trails.length > 1 && !isDecoy) {
+                    ctx.beginPath(); ctx.moveTo(p.trails[0].x, p.trails[0].y);
+                    for (let i = 1; i < p.trails.length; i++) ctx.lineTo(p.trails[i].x, p.trails[i].y);
+                    ctx.strokeStyle = activeColor; ctx.lineWidth = p.radius * 0.8; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.3; ctx.stroke(); ctx.globalAlpha = 1.0;
+                }
+
+                if (p.dashCd > 0) { ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 10, -Math.PI/2, (-Math.PI/2) + (Math.PI*2 * (p.dashCd/120))); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3; ctx.stroke(); }
+
+                ctx.beginPath(); ctx.arc(p.x, p.y, isDecoy ? 25 : p.radius, 0, Math.PI*2);
+                ctx.fillStyle = activeColor; ctx.shadowColor = activeColor; ctx.shadowBlur = (20 + (p.buff && !isDecoy ? 20 : 0)) * (isDecoy ? 0.5 : 1); ctx.fill(); ctx.shadowBlur = 0; 
+                
+                if (p.buff === 'shield' && !isDecoy) {
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 8, 0, Math.PI*2); ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 4;
+                    ctx.setLineDash([10, 10]); ctx.lineDashOffset = -Date.now() / 20; ctx.stroke(); ctx.setLineDash([]);
+                }
+                ctx.beginPath(); ctx.arc(p.x + (p.vx*0.5), p.y + (p.vy*0.5), (isDecoy ? 25 : p.radius) * 0.4, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fill();
+                ctx.globalAlpha = 1.0;
+            };
+
+            let p1Color = isHost ? getMyHex() : remoteColorHex;
+            let p2Color = isHost ? remoteColorHex : getMyHex();
+
+            if (Math.sqrt(gameState.p1.x**2 + gameState.p1.y**2) < gameState.arena.radius + 60 || gameState.mode==='koth') drawPlayer(gameState.p1, p1Color); 
+            for (let d of p1Decoys) drawPlayer(d, p1Color, true);
+
+            if (Math.sqrt(gameState.p2.x**2 + gameState.p2.y**2) < gameState.arena.radius + 60 || gameState.mode==='koth') drawPlayer(gameState.p2, p2Color); 
+            for (let d of p2Decoys) drawPlayer(d, p2Color, true);
+
+            // Floating Texts
+            for(let i=floatingTexts.length-1; i>=0; i--) {
+                let ft = floatingTexts[i]; ft.y += ft.vy; ft.life -= 0.02;
+                if(ft.life <= 0) floatingTexts.splice(i, 1);
+                else {
+                    ctx.globalAlpha = ft.life; ctx.fillStyle = ft.color || '#ffffff'; ctx.font = '900 24px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000000'; ctx.lineWidth = 4; ctx.strokeText(ft.text, ft.x, ft.y);
+                    ctx.shadowColor = ft.color || '#ffffff'; ctx.shadowBlur = 10; ctx.fillText(ft.text, ft.x, ft.y); ctx.shadowBlur = 0;
+                }
+            }
             
-            if (p.isDashing) { ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + Math.random()*10, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill(); }
+            // Damage Texts
+            for(let i=damageTexts.length-1; i>=0; i--) {
+                let dt = damageTexts[i]; dt.y += dt.vy; dt.life -= 0.03;
+                if(dt.life <= 0) damageTexts.splice(i, 1);
+                else {
+                    ctx.globalAlpha = dt.life; ctx.fillStyle = dt.color || '#ef4444'; ctx.font = '900 32px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000000'; ctx.lineWidth = 4; ctx.strokeText(dt.text, dt.x, dt.y);
+                    ctx.shadowColor = dt.color || '#ef4444'; ctx.shadowBlur = 10; ctx.fillText(dt.text, dt.x, dt.y); ctx.shadowBlur = 0;
+                }
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function updateKothUI() {
+            if (gameState.mode === 'koth') {
+                document.getElementById('koth-status').classList.remove('hidden');
+                document.getElementById('koth-bar-p1').style.width = `${(gameState.koth.p1Pts / KOTH_TARGET) * 100}%`;
+                document.getElementById('koth-bar-p2').style.width = `${(gameState.koth.p2Pts / KOTH_TARGET) * 100}%`;
+                document.getElementById('score-p1').innerText = Math.floor(gameState.koth.p1Pts/10);
+                document.getElementById('score-p2').innerText = Math.floor(gameState.koth.p2Pts/10);
+                document.getElementById('hud-p1').querySelector('.text-slate-500').innerText = '/ 100';
+                document.getElementById('hud-p2').querySelector('.text-slate-500').innerText = '100 \\';
+            } else {
+                document.getElementById('koth-status').classList.add('hidden');
+                document.getElementById('score-p1').innerText = gameState.p1.score;
+                document.getElementById('score-p2').innerText = gameState.p2.score;
+                document.getElementById('hud-p1').querySelector('.text-slate-500').innerText = '/ 5';
+                document.getElementById('hud-p2').querySelector('.text-slate-500').innerText = '5 \\';
+            }
+
+            if (gameState.mode === 'chaos' || gameState.mode === 'mayhem' || gameState.mode === 'pinball') {
+                document.getElementById('hp-bar-container-p1').classList.remove('hidden');
+                document.getElementById('hp-bar-container-p2').classList.remove('hidden');
+                let hp1 = Math.max(0, (gameState.p1.hp / (gameState.p1.maxHp || 1000)) * 100);
+                let hp2 = Math.max(0, (gameState.p2.hp / (gameState.p2.maxHp || 1000)) * 100);
+                document.getElementById('hp-bar-p1').style.width = hp1 + '%';
+                document.getElementById('hp-bar-p2').style.width = hp2 + '%';
+                document.getElementById('hp-bar-p1').style.backgroundColor = hp1 < 25 ? '#ef4444' : '#22d3ee';
+                document.getElementById('hp-bar-p2').style.backgroundColor = hp2 < 25 ? '#ef4444' : '#e879f9';
+            } else {
+                document.getElementById('hp-bar-container-p1').classList.add('hidden');
+                document.getElementById('hp-bar-container-p2').classList.add('hidden');
+            }
+        }
+
+        const TICK_RATE = 60; const TICK_MS = 1000 / TICK_RATE;
+        let lastTime = performance.now(); let accumulator = 0;
+
+        function gameLoop(time) {
+            requestAnimationFrame(gameLoop);
+            if (!isPlaying) return;
+
+            updateKothUI();
+
+            // Update Combos UI
+            const c1 = document.getElementById('combo-p1');
+            if(gameState.p1.combo > 1) { c1.classList.remove('hidden'); c1.innerText = `COMBO x${gameState.p1.combo}!`; c1.style.transform = `scale(${1 + gameState.p1.combo*0.05})`; }
+            else c1.classList.add('hidden');
             
-            if (p.trails && p.trails.length > 1) {
-                ctx.beginPath(); ctx.moveTo(p.trails[0].x, p.trails[0].y);
-                for (let i = 1; i < p.trails.length; i++) ctx.lineTo(p.trails[i].x, p.trails[i].y);
-                ctx.strokeStyle = activeColor; ctx.lineWidth = p.radius * 0.8; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.3; ctx.stroke(); ctx.globalAlpha = 1.0;
+            const c2 = document.getElementById('combo-p2');
+            if(gameState.p2.combo > 1) { c2.classList.remove('hidden'); c2.innerText = `COMBO x${gameState.p2.combo}!`; c2.style.transform = `scale(${1 + gameState.p2.combo*0.05})`; }
+            else c2.classList.add('hidden');
+
+            // Match UI
+            const matchUi = document.getElementById('match-status');
+            if (gameState.status === 'match_over') {
+                matchUi.classList.remove('hidden'); matchUi.classList.add('flex');
+                let p1Wins = gameState.mode === 'koth' ? (gameState.koth.p1Pts >= KOTH_TARGET) : (gameState.p1.score >= TARGET_SCORE);
+                document.getElementById('winner-text').className = `text-3xl font-black mb-4 ${p1Wins ? "text-cyan-400 glow-text" : "text-fuchsia-400 glow-text"}`;
+                document.getElementById('winner-text').innerText = p1Wins ? "P1 WINS MATCH!" : "P2 WINS MATCH!";
+                
+                if (!matchUi.dataset.announced) {
+                    speak(p1Wins ? "Player 1 is the Ultimate Champion!" : "Player 2 is the Ultimate Champion!");
+                    matchUi.dataset.announced = "true";
+                }
+
+                if (isHost) { document.getElementById('btn-rematch').classList.remove('hidden'); document.getElementById('txt-waiting-rematch').classList.add('hidden'); } 
+                else { document.getElementById('btn-rematch').classList.add('hidden'); document.getElementById('txt-waiting-rematch').classList.remove('hidden'); }
+                
+                // Guest win detection logic
+                if (!isHost && lastGuestMatchStatus !== 'match_over') {
+                    if (!p1Wins) winMatch(); // Guest is P2, if P1 didn't win, Guest won.
+                    lastGuestMatchStatus = 'match_over';
+                }
+            } else {
+                matchUi.classList.add('hidden'); matchUi.classList.remove('flex');
+                if (!isHost) lastGuestMatchStatus = gameState.status;
             }
 
-            if (p.dashCd > 0) { ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 10, -Math.PI/2, (-Math.PI/2) + (Math.PI*2 * (p.dashCd/120))); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3; ctx.stroke(); }
-
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-            ctx.fillStyle = activeColor; ctx.shadowColor = activeColor; ctx.shadowBlur = 20; ctx.fill(); ctx.shadowBlur = 0; 
+            let dt = time - lastTime; lastTime = time; accumulator += dt;
+            while (accumulator >= TICK_MS) {
+                if (isHost) { updatePhysics(); if (conn && conn.open) conn.send({ type: 'state', data: gameState }); } 
+                else { if (conn && conn.open) conn.send({ type: 'input', data: localInputs }); }
+                accumulator -= TICK_MS;
+            }
             
-            ctx.beginPath(); ctx.arc(p.x + (p.vx*0.5), p.y + (p.vy*0.5), p.radius * 0.4, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fill();
-        };
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        let p1Color = isHost ? getMyHex() : remoteColorHex;
-        let p2Color = isHost ? remoteColorHex : getMyHex();
+            let shakeX = 0, shakeY = 0; let currentShake = screenShake;
+            if (gameState.mode === 'classic' && gameState.status === 'playing' && gameState.arena.radius < 200) currentShake = Math.max(currentShake, 2.5);
+            if (gameState.mode === 'bombtag' && gameState.status === 'playing' && gameState.bombTag.timer < 180) currentShake = Math.max(currentShake, 3);
+            if (gameState.mode === 'chaos' && gameState.status === 'playing') currentShake = Math.max(currentShake, 3.5);
+            if (gameState.mode === 'mayhem' && gameState.status === 'playing') currentShake = Math.max(currentShake, 8.0);
+            if (currentShake > 0) { shakeX = (Math.random()-0.5)*currentShake; shakeY = (Math.random()-0.5)*currentShake; screenShake *= 0.85; if(screenShake<0.5) screenShake=0; }
 
-        drawPlayer(gameState.p1, p1Color); 
-        drawPlayer(gameState.p2, p2Color); 
+            ctx.translate(canvas.width/2 + shakeX, canvas.height/2 + shakeY);
+            ctx.globalCompositeOperation = 'lighter'; 
+            drawEntities();
 
-        for(let i=floatingTexts.length-1; i>=0; i--) {
-            let ft = floatingTexts[i]; ft.y += ft.vy; ft.life -= 0.02;
-            if(ft.life <= 0) floatingTexts.splice(i, 1);
-            else {
-                ctx.globalAlpha = ft.life; ctx.fillStyle = ft.color || '#ffffff'; ctx.font = '900 24px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.strokeStyle = '#000000'; ctx.lineWidth = 4; ctx.strokeText(ft.text, ft.x, ft.y);
-                ctx.shadowColor = ft.color || '#ffffff'; ctx.shadowBlur = 10; ctx.fillText(ft.text, ft.x, ft.y); ctx.shadowBlur = 0;
+            ctx.globalCompositeOperation = 'source-over';
+            if (gameState.mode === 'classic' && gameState.status === 'playing' && gameState.arena.radius < 200) {
+                ctx.fillStyle = `rgba(239, 68, 68, ${0.4 + Math.sin(Date.now()/100)*0.2})`; ctx.font = '900 30px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("SUDDEN DEATH", 0, -gameState.arena.radius - 40);
+            }
+            if (gameState.mode === 'bombtag' && gameState.status === 'playing') {
+                ctx.fillStyle = `rgba(239, 68, 68, ${0.6 + Math.sin(Date.now()/50)*0.4})`; ctx.font = '900 40px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
+                if (gameState.bombTag.timer < 180) ctx.fillText("DANGER!", 0, -gameState.arena.radius - 40);
+            }
+
+            if (gameState.status === 'countdown') {
+                ctx.fillStyle = 'white'; ctx.font = '900 140px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 20; ctx.fillText(gameState.countdown, 0, 0); ctx.shadowBlur = 0;
+            } else if (gameState.status === 'round_over') {
+                ctx.fillStyle = 'white'; ctx.font = '900 80px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(gameState.mode === 'koth' ? "ZONE SECURED!" : "KNOCKOUT!", 0, -30);
+            }
+
+            if (joystick.active) {
+                ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 60, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.beginPath(); ctx.arc(joystick.stickX, joystick.stickY, 25, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
             }
         }
-        for(let i=damageTexts.length-1; i>=0; i--) {
-            let dt = damageTexts[i]; dt.y += dt.vy; dt.life -= 0.03;
-            if(dt.life <= 0) damageTexts.splice(i, 1);
-            else {
-                ctx.globalAlpha = dt.life; ctx.fillStyle = dt.color || '#ef4444'; ctx.font = '900 32px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.strokeStyle = '#000000'; ctx.lineWidth = 4; ctx.strokeText(dt.text, dt.x, dt.y);
-                ctx.shadowColor = dt.color || '#ef4444'; ctx.shadowBlur = 10; ctx.fillText(dt.text, dt.x, dt.y); ctx.shadowBlur = 0;
-            }
-        }
-        ctx.globalAlpha = 1.0;
-    }
-
-    function drawLightsOutOverlay() {
-        if (gameState.mode !== 'lightsout' || gameState.status !== 'playing') return;
         
-        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to cover whole screen easily
-        
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.98)';
-        ctx.beginPath();
-        ctx.rect(0, 0, canvas.width, canvas.height);
-        
-        const punchHole = (x, y, r) => {
-            let screenX = x + canvas.width/2; let screenY = y + canvas.height/2;
-            ctx.moveTo(screenX, screenY); ctx.arc(screenX, screenY, r, 0, Math.PI*2, true);
-        };
-
-        // Players have tiny vision
-        punchHole(gameState.p1.x, gameState.p1.y, 70);
-        punchHole(gameState.p2.x, gameState.p2.y, 70);
-
-        // Illuminations
-        for(let i=illuminations.length-1; i>=0; i--) {
-            let ill = illuminations[i];
-            punchHole(ill.x, ill.y, ill.radius * ill.life);
-            ill.life -= 0.02; if(ill.life <= 0) illuminations.splice(i, 1);
-        }
-        ctx.fill();
-    }
-
-    function updateKothUI() {
-        if (gameState.mode === 'koth') {
-            document.getElementById('koth-status').classList.remove('hidden');
-            document.getElementById('koth-bar-p1').style.width = `${(gameState.koth.p1Pts / KOTH_TARGET) * 100}%`;
-            document.getElementById('koth-bar-p2').style.width = `${(gameState.koth.p2Pts / KOTH_TARGET) * 100}%`;
-            document.getElementById('score-p1').innerText = Math.floor(gameState.koth.p1Pts/10);
-            document.getElementById('score-p2').innerText = Math.floor(gameState.koth.p2Pts/10);
-        } else {
-            document.getElementById('koth-status').classList.add('hidden');
-            document.getElementById('score-p1').innerText = gameState.p1.score;
-            document.getElementById('score-p2').innerText = gameState.p2.score;
-        }
-
-        if (gameState.mode === 'mayhem' || gameState.mode === 'vampire') {
-            document.getElementById('hp-bar-container-p1').classList.remove('hidden');
-            document.getElementById('hp-bar-container-p2').classList.remove('hidden');
-            let hp1 = Math.max(0, (gameState.p1.hp / (gameState.p1.maxHp || 1000)) * 100);
-            let hp2 = Math.max(0, (gameState.p2.hp / (gameState.p2.maxHp || 1000)) * 100);
-            document.getElementById('hp-bar-p1').style.width = hp1 + '%';
-            document.getElementById('hp-bar-p2').style.width = hp2 + '%';
-            document.getElementById('hp-bar-p1').style.backgroundColor = hp1 < 25 ? '#ef4444' : '#22d3ee';
-            document.getElementById('hp-bar-p2').style.backgroundColor = hp2 < 25 ? '#ef4444' : '#e879f9';
-        } else {
-            document.getElementById('hp-bar-container-p1').classList.add('hidden');
-            document.getElementById('hp-bar-container-p2').classList.add('hidden');
-        }
-    }
-
-    const TICK_RATE = 60; const TICK_MS = 1000 / TICK_RATE;
-    let lastTime = performance.now(); let accumulator = 0;
-
-    function gameLoop(time) {
         requestAnimationFrame(gameLoop);
-        if (!isPlaying) return;
-
-        updateKothUI();
-        const matchUi = document.getElementById('match-status');
-        if (gameState.status === 'match_over') {
-            matchUi.classList.remove('hidden'); matchUi.classList.add('flex');
-            let p1Wins = gameState.mode === 'koth' ? (gameState.koth.p1Pts >= KOTH_TARGET) : (gameState.p1.score >= TARGET_SCORE);
-            document.getElementById('winner-text').className = `text-3xl font-black mb-4 ${p1Wins ? "text-cyan-400 glow-text" : "text-fuchsia-400 glow-text"}`;
-            document.getElementById('winner-text').innerText = p1Wins ? "P1 WINS MATCH!" : "P2 WINS MATCH!";
-            if (!matchUi.dataset.announced) { speak(p1Wins ? "Player 1 is the Ultimate Champion!" : "Player 2 is the Ultimate Champion!"); matchUi.dataset.announced = "true"; }
-            if (isHost) { document.getElementById('btn-rematch').classList.remove('hidden'); document.getElementById('txt-waiting-rematch').classList.add('hidden'); } 
-            else { document.getElementById('btn-rematch').classList.add('hidden'); document.getElementById('txt-waiting-rematch').classList.remove('hidden'); }
-            if (!isHost && lastGuestMatchStatus !== 'match_over') { if (!p1Wins) winMatch(); lastGuestMatchStatus = 'match_over'; }
-        } else {
-            matchUi.classList.add('hidden'); matchUi.classList.remove('flex');
-            if (!isHost) lastGuestMatchStatus = gameState.status;
-        }
-
-        let dt = time - lastTime; lastTime = time; accumulator += dt;
-        while (accumulator >= TICK_MS) {
-            if (isHost) { updatePhysics(); if (conn && conn.open) conn.send({ type: 'state', data: gameState }); } 
-            else { if (conn && conn.open) conn.send({ type: 'input', data: localInputs }); }
-            accumulator -= TICK_MS;
-        }
-        
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        let shakeX = 0, shakeY = 0; let currentShake = screenShake;
-        if (gameState.mode === 'classic' && gameState.status === 'playing' && gameState.arena.radius < 200) currentShake = Math.max(currentShake, 2.5);
-        if (currentShake > 0) { shakeX = (Math.random()-0.5)*currentShake; shakeY = (Math.random()-0.5)*currentShake; screenShake *= 0.85; if(screenShake<0.5) screenShake=0; }
-
-        ctx.translate(canvas.width/2 + shakeX, canvas.height/2 + shakeY);
-        ctx.globalCompositeOperation = 'lighter'; 
-        drawEntities();
-        
-        drawLightsOutOverlay(); // Fog of war drawing
-
-        ctx.globalCompositeOperation = 'source-over';
-        if (gameState.status === 'countdown') {
-            ctx.fillStyle = 'white'; ctx.font = '900 140px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 20; ctx.fillText(gameState.countdown, 0, 0); ctx.shadowBlur = 0;
-        } else if (gameState.status === 'round_over') {
-            ctx.fillStyle = 'white'; ctx.font = '900 80px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("KNOCKOUT!", 0, -30);
-        }
-
-        if (joystick.active) {
-            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 60, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
-            ctx.beginPath(); ctx.arc(joystick.stickX, joystick.stickY, 25, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
-        }
-    }
-    
-    requestAnimationFrame(gameLoop);
-</script>
+    </script>
 </body>
 </html>
